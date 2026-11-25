@@ -1,6 +1,6 @@
 # Tasks
 
-There are 21 tasks, one directory each. Every task is a real slowdown in vLLM or SGLang with a known reference fix. You give an agent the slow code, and score its edited tree against the unmodified code on the same GPU. Each directory follows Apple's RSI-Inference-Bench layout.
+There are 22 tasks, one directory each. Every task is a real slowdown in vLLM or SGLang with a known reference fix. You give an agent the slow code, and score its edited tree against the unmodified code on the same GPU. Each directory follows Apple's RSI-Inference-Bench layout.
 
 ## What is in a task directory?
 
@@ -18,8 +18,8 @@ There are 21 tasks, one directory each. Every task is a real slowdown in vLLM or
 
 ## How do I run one?
 
-- **`fix_*` tasks (17):** follow `package/RUN.md`. Setup takes 10-50 minutes and needs internet; scoring runs offline.
-  - The 10 mined packages share one harness. Calibrate once per GPU type with `harness/run.sh <label> cal`, then score each candidate with `harness/run.sh <label> score <name>`.
+- **`fix_*` tasks (18):** follow `package/RUN.md`. Setup takes 10-50 minutes and needs internet; scoring runs offline.
+  - The 11 mined packages share one harness. Calibrate once per GPU type with `harness/run.sh <label> cal`, then score each candidate with `harness/run.sh <label> score <name>`.
   - The 7 ISO-Bench packages are older and use their own job scripts, which their `RUN.md` describes.
   - Each `instruction.md` says how a candidate tree is supplied. On a GPU other than the RTX 4090, set REF in `harness/gate.json` from your own calibration first. The scorer does not check the GPU model.
 - **Apple tasks, task C, Φ-Bench (4):** follow the "How to run it" section of the task's `README.md`. These use Apple's or Φ-Bench's own verifier, with our changes shipped as diffs and scripts.
@@ -53,10 +53,10 @@ The speedups are on an RTX 4090, the median over scoring jobs. Minutes are per s
 
 | Task | Engine | Model | Speedup | Min | 5090 | Independent rebuild |
 |---|---|---|---|---|---|---|
-| [fix_vllm_7822_prefix_caching](fix_vllm_7822_prefix_caching/) | vLLM | Llama-3-8B-Instruct-FP8 | 1.48× | 4.7 | no | not yet |
+| [fix_vllm_7822_prefix_caching](fix_vllm_7822_prefix_caching/) | vLLM | Llama-3-8B-Instruct-FP8 | 1.48× | 4.7 | no | PASS-with-fixes (tight band) |
 | [fix_vllm_12380_cuda_graph_decode](fix_vllm_12380_cuda_graph_decode/) | vLLM | Llama-3-8B-Instruct-FP8 | 1.51× | 8.7 | no | PASS-with-fixes |
 | [fix_sglang_6994_lora_host_sync](fix_sglang_6994_lora_host_sync/) | SGLang | Qwen2.5-1.5B-Instruct | 1.47× | 4.5 | no | PASS-with-fixes |
-| [fix_vllm_16436_sampler_host_sync](fix_vllm_16436_sampler_host_sync/) | vLLM | Qwen2.5-1.5B-Instruct | 1.09× | 19 | no | not yet |
+| [fix_vllm_16436_sampler_host_sync](fix_vllm_16436_sampler_host_sync/) | vLLM | Qwen2.5-1.5B-Instruct | 1.09× | 19 | no | PASS |
 | [fix_vllm_13365_ngram_draft_lookup](fix_vllm_13365_ngram_draft_lookup/) | vLLM | Qwen2.5-1.5B-Instruct | 1.09× | 9.6 | no | PASS-with-fixes |
 | [fix_vllm_14930_spec_decode_verify](fix_vllm_14930_spec_decode_verify/) | vLLM | Qwen2.5-1.5B-Instruct | 1.09× | 12 | no | PASS-with-fixes |
 | [fix_vllm_14857_mamba2_prefill](fix_vllm_14857_mamba2_prefill/) | vLLM | Bamba-9B | 1.06× | 9.5 | no | PASS-with-fixes |
@@ -73,7 +73,8 @@ The speedups are on an RTX 4090, the median over scoring jobs. Minutes are per s
 | [fix_vllm_35442_spec_accept_count_copy](fix_vllm_35442_spec_accept_count_copy/) | vLLM | Qwen3.5-4B | 1.04× | 16 | being measured | PASS-with-fixes |
 | [fix_vllm_27418_vit_patch_embed](fix_vllm_27418_vit_patch_embed/) | vLLM | Qwen2-VL-2B-Instruct | 1.69× | 11 | being measured | PASS-with-fixes |
 | [fix_sglang_14956_mrope_text_sync](fix_sglang_14956_mrope_text_sync/) | SGLang | Qwen2-VL-2B-Instruct | 1.31× | 7.5 | yes, 1.49× | PASS |
-| [fix_vllm_30056_reasoning_end_scan](fix_vllm_30056_reasoning_end_scan/) | vLLM | Qwen3-0.6B | 1.79× | 8.6 | being measured | in progress |
-| [fix_sglang_20503_waiting_queue_set](fix_sglang_20503_waiting_queue_set/) | SGLang | Qwen2.5-0.5B-Instruct | 1.08× | 10 | not tried | in progress |
+| [fix_vllm_30056_reasoning_end_scan](fix_vllm_30056_reasoning_end_scan/) | vLLM | Qwen3-0.6B | 1.79× | 8.6 | being measured | PASS-with-fixes |
+| [fix_sglang_20503_waiting_queue_set](fix_sglang_20503_waiting_queue_set/) | SGLang | Qwen2.5-0.5B-Instruct | 1.08× | 10 | not tried | PASS |
+| [fix_sglang_17005_logprob_position_convert](fix_sglang_17005_logprob_position_convert/) | SGLang | Qwen2.5-0.5B-Instruct | 1.40× | 23 | not tried | not yet |
 
 "PASS-with-fixes" means an independent tester reproduced the numbers but had to fix the instructions or the harness. Those fixes are now in the package. "Not yet" means only the authors have rebuilt the package from an empty directory. See [../docs/acceptance/](../docs/acceptance/).

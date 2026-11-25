@@ -1,8 +1,8 @@
 # SGLang #20503: scheduler, the waiting-queue update builds the set of admitted requests once
 
 On one offline call with 16,384 short requests, the human fix makes the batch **1.08x** faster on an RTX 4090
-(band ±4 %). Outputs are bit-identical to the unmodified engine's. The independent test is still running; its interim
-calibration reads 1.097, inside the band.
+(band ±4 %). Outputs are bit-identical to the unmodified engine's. An independent tester rebuilt the package and got
+1.095 (median of 4 jobs): PASS, about 1-1.5 % above our jobs but inside the band.
 
 **This is the weakest task of its batch.** The effect is about 8 %, against A/A noise of up to 3 % (2.06 % and 2.97 % in
 our two calibrations, 2.45 % in the tester's). Single pairs of the fix range from 1.035 to 1.119, and one scoring job
@@ -126,13 +126,20 @@ C++ compiler is needed in case FlashInfer JIT-compiles a module at start-up.
 
 ## Has someone else rebuilt it?
 
-**In progress** (interim: calibration 1.097, inside the band, A/A 2.45 %; provisional PASS). An independent tester is
-rebuilding the package from an empty directory on the 4-GPU server (GPU1).
-- Build: reproduced exactly in 783 s. All 2,162 source files match, both freezes equal ours (171 packages), and all
-  sglang files hash as ours; only `scheduler.py` differs between the arms.
-- Calibration: pairs 1.065-1.105, speedup **1.097** (band 1.037-1.123), A/A max **2.45 %**, `ties_ref`. All 25 timed
-  digests identical fix vs parent and parent vs parent; correctness pass 24/24. Peak 20,544 MiB, 1,613 s.
-- Its scoring jobs are still running.
+Yes: **PASS, final** (`docs/acceptance/batch6.md`). An independent tester, an agent that wrote none of this material,
+rebuilt the package from an empty directory on the 4-GPU server (GPUs 1 and 0).
+- Build: reproduced exactly in ~13 min (783 s). All 2,162 source files match, both freezes equal ours (171 packages),
+  and the sglang files hash as ours (2,115 / 2,114, the fix's `_version.py` differing only in its documented template).
+- Jobs: calibration **1.0972**, scoring **1.0975**, **1.0949** and **1.0864** (the last on GPU0, while other setups were
+  staging at low priority), all `ties_ref` with reward 1.0. **Median of 4 jobs 1.095**, against REF 1.08 ±4 %. Fix rep
+  9.38-9.71 s, parent 10.18-10.47 s; single pairs 1.048-1.106. Peak 20,544 MiB.
+- A/A max **2.45 %** (0.991-1.0245), inside our 2.06-2.97 %.
+- Digests identical everywhere, no flip; correctness pass 24/24.
+- Variants, all as ours: `prefix` 1.070 `ties_ref` (accepted by design, reward 0.87), `multistep` 1.091
+  `fail:settings`, `short` 1.202 `fail:counts,exact,correct`.
+- Transfers: 4,096 requests 1.011 (ours 1.008); `max_running_requests` 64 1.067 (ours 1.048).
+- The tester's only remark: the fix reads ~1-1.5 % above our six jobs (1.068-1.087) on its GPUs, so REF may read
+  ~1.5 % high on another setup. It stays inside the band.
 
 ## How to run it
 

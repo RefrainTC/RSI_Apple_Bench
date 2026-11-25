@@ -1,15 +1,17 @@
 # vLLM #30056: structured output with a reasoning parser, end-of-reasoning check on the new tokens only
 
 On 64 structured-output requests that are still reasoning, the human fix makes generation **1.79x** faster on an
-RTX 4090 (band ±3 %). Outputs are bit-identical to the unmodified engine's. The independent test is still running; its
-interim calibration reads 1.790.
+RTX 4090 (band ±3 %). Outputs are bit-identical to the unmodified engine's. An independent tester rebuilt the package
+and got 1.790 (median of 5 jobs): PASS-with-fixes, because its first fresh calibration failed on one engine-level flip.
+A second tester on another server: PASS, no flips.
 
 Two things to know before using this task:
 - **The load is built to show this cost.** Reasoning never ends in the timed reps, so the check that the PR speeds up
   runs for every request on every step. Real reasoning requests are in that state only while they think.
 - **The timed load is not perfectly repeatable, in either arm.** About one run in 50 flips the digest of one timed rep:
-  1 of 69 parent runs and 1 of 38 fix runs so far. The flip is the engine's, not the fix's. The gate therefore allows
-  one rerun of a scoring job.
+  1 of 69 parent runs and 1 of 38 fix runs in our runs; 1 of 42 parent runs and 0 of 19 fix runs in the independent
+  test. The flip is the engine's, not the fix's. The gate therefore allows one rerun of a scoring job, but not of a
+  calibration, and a fresh 25-run calibration contains a flip about 4 times in 10.
 
 Terms used below:
 - **parent**: the unmodified tree, commit `67475a6e`. **fix**: the human fix, commit `c72ea107`.
@@ -121,9 +123,12 @@ passes).
 4. **Digests depend on the compile cache.** The package's runs give different digests than the screen's (another
    torch.compile cache, other tuned kernels), but fix and parent agree within a job because candidate runs start from a
    copy of the parent's cache.
-5. **A rare false fail.** The timed load flips one rep in about one run of 50, in either arm (1/69 parent runs, 1/38 fix
-   runs). With the one-rerun rule a correct candidate is rejected only if its rerun flips too. The cause is untested.
-   A calibration on a fresh install can still end `fail:exact` this way (see acceptance).
+5. **A rare false fail.** The timed load flips one rep in about one run of 50, in either arm (ours: 1/69 parent runs,
+   1/38 fix runs; the independent tester's: 1/42 parent runs, 0/19 fix runs; the second server: 0 flips in 123 timed
+   reps). With the one-rerun rule a correct candidate is rejected only if its rerun flips too. The cause is untested.
+   Calibration mode has no rerun rule, and at ~1 run in 50 a 25-run calibration contains a flip about 4 times in 10:
+   **a fresh calibration can end `fail:exact` with nothing wrong** (it did in the independent test). Repeat it, or
+   judge it on fix-vs-parent digests only.
 
 ## What does it cost to run?
 
@@ -140,19 +145,31 @@ Disk: ~25 GB for the package root (two venvs ~8 GB each, uv cache, 1.5 GB model)
 
 ## Has someone else rebuilt it?
 
-**In progress** (interim: calibration 1.790, A/A 2.22 %, `fail:exact` from one parent-run flip; first scoring job
-1.791 `ties_ref`). An independent tester is rebuilding the package from an empty directory on the 4-GPU server (GPU0).
-- Build: reproduced exactly in 703 s (both freezes, 156 packages, and all 1,673 vllm files of each venv hash as ours).
-- Calibration: pairs 1.777-1.797, speedup **1.790**, A/A max **2.22 %**, correctness pass 24/24 (fix vs parent and parent
-  vs parent, all 24 prompts end reasoning). Verdict **`fail:exact`**: in one A/B pair the *parent* run flipped its third
-  rep; every other timed digest, the 10 A/A parent runs included, was identical. Calibration mode has no rerun rule, so
-  one engine-level flip fails the whole calibration.
-- First scoring job: **1.791**, `ties_ref`, all checks pass.
-- Provisional verdict: **PASS-with-fixes**. The tester suggests extending the one-rerun rule to calibration mode. That
-  change is not made yet.
+Yes: **PASS-with-fixes, final** (`docs/acceptance/batch6.md`). An independent tester, an agent that wrote none of this
+material, rebuilt the package from an empty directory on the 4-GPU server (GPUs 0 and 1).
+- Build: reproduced exactly in ~12 min (both freezes, 156 packages, and all 1,673 vllm files of each venv hash as ours).
+- Jobs: calibration 1.7899, second calibration 1.7895, scoring 1.7909 and 1.7852 (GPU0), scoring 1.7962 on GPU1 with
+  empty caches. **Median of 5 jobs 1.790**, against REF 1.79 ±3 %. Fix rep 7.632-7.663 s, parent 13.57-13.79 s.
+  Peak 20,110 MiB.
+- A/A max 2.22 % (first calibration) and 1.00 % (second).
+- Correctness pass 24/24, logprob difference 0, in every job on both GPUs, and equal to `ref_correct.json`.
+- **The first fresh calibration ended `fail:exact`.** In one A/B pair the *parent* run flipped one timed rep: 8 of 64
+  requests diverged (at output positions 4 to 82) and all kept writing free text. Every other timed digest was
+  identical. `check.py` applies the one-rerun rule only to scoring and `quick` jobs, so one engine-level flip fails a
+  calibration. The second calibration passed.
+- Flip counts in this test (official load, both GPUs, digests identical across GPUs): parent 1/42 runs (1/126 reps),
+  fix 0/19 runs (0/57 reps), warm-ups 0/13.
+- Variants: `noadvance` 1.794 `fail:correct`, `noparser` 1.779 `fail:exact,correct,settings`, `short` 2.326
+  `fail:counts,exact`, all as ours. Transfers: 8 requests 1.356 (ours 1.347), no structured output 0.999 (ours 1.000).
+- The tester's suggested fixes, not yet in the package: in calibration, judge `exact` on fix-vs-parent pairs only and
+  report parent-parent flips separately, or apply the one-rerun rule there too; and correct `RUN.md`'s time estimate for
+  this task (~40 + 18 min) to the measured ~24 + 9 min.
 
-Before that, a second tester ran an earlier version of the package (manifest `9079e166381e`) on the 2-GPU server; those
-runs are not summarized yet and are not reported here.
+**Second server: PASS** (`docs/acceptance/batch5.md`). Another independent tester ran an earlier version of the package
+on the 2-GPU server (a second RTX 4090 server with 2 GPUs): calibration **1.7878**, 12 scoring jobs **1.778-1.806**, all
+in band, A/A 2.04 %. **No digest flip in any arm**: 123 fix-vs-parent timed reps and 15 parent-vs-parent reps identical;
+correctness 24/24 in all 13 jobs. All three variants got our verdicts; transfers 8 requests 1.371, no structured output
+0.999. No deviation from `RUN.md`.
 
 **Harness fixes already applied** (found by the independent test of `fix_vllm_35442_spec_accept_count_copy`, same
 harness): the cache copy for the first candidate run can no longer fail silently on a fresh stage, and calibration runs

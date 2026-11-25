@@ -34,8 +34,8 @@ aa_band_pct = 0.43
 gate = "kernel, locked-file and protected-setting gate; greedy correctness client (>= 90 % exact, near-ties <= 0.5 nats); every timed repeat: same completions and output lengths, no errors, >= 90 % identical texts; median TTFT <= 1.05 x paired parent; settings from the server log; audit hook; integrity manifests"
 
 [metadata.rsi_apple_bench.measured]
-rtx4090 = { ref = 1.0855, aa_max_pct = 0.43, jobs = 7, minutes_per_scoring = 19, note = "single calibration job reads 1.093; use the multi-job REF" }
+rtx4090 = { ref = 1.0855, aa_max_pct = 0.43, jobs = 7, minutes_per_scoring = 19, peak_vram_mib = 21094, note = "single calibration job reads 1.093; use the multi-job REF; peak VRAM from the independent test" }
 
 [metadata.rsi_apple_bench.acceptance]
-independent = "not yet"
-report = "none; the authors' own empty-directory package test is summarised in README.md"
+independent = "PASS"
+report = "docs/acceptance/batch6-iso.md"

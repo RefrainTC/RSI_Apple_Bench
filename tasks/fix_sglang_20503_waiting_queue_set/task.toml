@@ -37,5 +37,5 @@ gate = "exact: output token counts, live ServerArgs (ports ignored), digest of e
 rtx4090 = { ref = 1.08, aa_max_pct = 2.97, jobs = 20, minutes_per_scoring = 10, note = "2 calibrations, 4 scoring jobs, then 14 extra scoring jobs (median 1.082, SD 0.95 %)" }
 
 [metadata.rsi_apple_bench.acceptance]
-independent = "in progress (interim: calibration 1.097, inside the band, A/A 2.45 %; provisional PASS)"
-report = "docs/acceptance/batch6.md (interim)"
+independent = "PASS (median of 4 jobs 1.095, A/A 2.45 %, all variants as the card)"
+report = "docs/acceptance/batch6.md"

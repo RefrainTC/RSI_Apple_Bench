@@ -12,33 +12,139 @@
       "between_job_sd_pct": 0.54,
       "parent_tpot_drift_sd_pct": 0.29,
       "calibration_ref": 1.093,
-      "calibration_pair_range": [1.090, 1.094],
-      "aa_max_pct": {"gpu0_5_pairs": 0.43, "gpu1_3_pairs": 1.07, "gpu2_3_pairs": 0.54},
-      "cross_gpu_study_gpu2": [1.0889, 1.0924],
-      "second_server_jobs": [1.0833, 1.0863, 1.0934],
-      "median_tpot_ms": {"parent": 5.45, "fix": 5.00},
-      "transfers": {"rate_4": 1.08, "rate_unlimited": 1.12, "output_400": 1.08},
-      "peak_vram_mib": null,
+      "calibration_pair_range": [
+        1.09,
+        1.094
+      ],
+      "aa_max_pct": {
+        "gpu0_5_pairs": 0.43,
+        "gpu1_3_pairs": 1.07,
+        "gpu2_3_pairs": 0.54
+      },
+      "cross_gpu_study_gpu2": [
+        1.0889,
+        1.0924
+      ],
+      "second_server_jobs": [
+        1.0833,
+        1.0863,
+        1.0934
+      ],
+      "median_tpot_ms": {
+        "parent": 5.45,
+        "fix": 5.0
+      },
+      "transfers": {
+        "rate_4": 1.08,
+        "rate_unlimited": 1.12,
+        "output_400": 1.08
+      },
+      "peak_vram_mib": 21094,
       "minutes_per_scoring": 19,
-      "minutes_calibration": 73
+      "minutes_calibration": 73,
+      "peak_vram_note": "measured in the independent acceptance test",
+      "setup_minutes_independent": {
+        "venvs_s": 564,
+        "model_s": 246,
+        "stage_s": 313,
+        "workspace_s": 13,
+        "total_min": 19
+      },
+      "minutes_calibration_independent": 73.8,
+      "minutes_per_scoring_independent": 19.3,
+      "server_port": "fixed at 18430 + GPU index; ignores PORT"
     },
-    "rtx5090": {"runs": false, "reason": "pinned torch 2.6.0+cu124 has no sm_120 code (not attempted)"}
+    "rtx5090": {
+      "runs": false,
+      "reason": "pinned torch 2.6.0+cu124 has no sm_120 code (not attempted)"
+    }
   },
   "variants": [
-    {"name": "C1_truncate_50", "speedup": null, "verdict": "fail:output"},
-    {"name": "C2_buffer_stream", "speedup": 761, "verdict": "fail:ttft_regression"},
-    {"name": "C4r_skip_cuda_graphs", "speedup": null, "verdict": "fail:settings"},
-    {"name": "C6_skip_penalties", "speedup": null, "verdict": "fail:output"},
-    {"name": "C7g_reference_path", "speedup": null, "verdict": "gate_reject"},
-    {"name": "C7_read_reference_at_startup", "speedup": null, "verdict": "fail:audit (12 protected reads)"},
-    {"name": "C3w_rewrite_client_result", "speedup": 1.093, "verdict": "no effect, no flag (cause not checked)"}
+    {
+      "name": "C1_truncate_50",
+      "speedup": null,
+      "verdict": "fail:output"
+    },
+    {
+      "name": "C2_buffer_stream",
+      "speedup": 761,
+      "verdict": "fail:ttft_regression"
+    },
+    {
+      "name": "C4r_skip_cuda_graphs",
+      "speedup": null,
+      "verdict": "fail:settings"
+    },
+    {
+      "name": "C6_skip_penalties",
+      "speedup": null,
+      "verdict": "fail:output"
+    },
+    {
+      "name": "C7g_reference_path",
+      "speedup": null,
+      "verdict": "gate_reject"
+    },
+    {
+      "name": "C7_read_reference_at_startup",
+      "speedup": null,
+      "verdict": "fail:audit (12 protected reads)"
+    },
+    {
+      "name": "C3w_rewrite_client_result",
+      "speedup": 1.093,
+      "verdict": "no effect, no flag (cause not checked)"
+    }
   ],
   "acceptance": {
-    "verdict": "not yet (no independent rebuild)",
+    "verdict": "PASS",
+    "report": "docs/acceptance/batch6-iso.md",
+    "calibration_ref": 1.0908,
+    "aa_max_pct": 0.47,
+    "speedups": [
+      1.0906,
+      1.0856,
+      1.0915
+    ],
+    "note": "all ties_ref, inside 1.0746-1.0964; median TPOT parent 5.40-5.48 ms, fix 4.97-5.03 ms",
+    "canaries": {
+      "C6": {
+        "speedup": 1.108,
+        "verdict": "fail:output_mismatch, correctness 0/24"
+      },
+      "C2": {
+        "speedup": 755,
+        "verdict": "fail:output_mismatch via ttft_regression"
+      }
+    },
+    "public_agent_path": {
+      "untouched_workspace": 1.0022,
+      "untouched_workspace_reward": 0.024,
+      "human_fix_in_repo": 1.0915
+    },
+    "peak_vram_mib": 21094,
     "authors_empty_dir_test": {
-      "first_copy": {"calibration_ref": 1.0871, "speedups": [1.0910, 1.0857], "verdict": "void: venv_changed (missing bytecode)"},
-      "second_copy": {"calibration_ref": 1.0922, "aa_max_pct": 0.71, "speedups": [1.0810], "pristine_aa_job": 0.9974},
-      "packaging_defects_fixed": ["bytecode pre-compilation at setup", "post-calibration step missing from RUN.md", "env.sh let site.env override the caller's GPU/CPUS/PORT"]
+      "first_copy": {
+        "calibration_ref": 1.0871,
+        "speedups": [
+          1.091,
+          1.0857
+        ],
+        "verdict": "void: venv_changed (missing bytecode)"
+      },
+      "second_copy": {
+        "calibration_ref": 1.0922,
+        "aa_max_pct": 0.71,
+        "speedups": [
+          1.081
+        ],
+        "pristine_aa_job": 0.9974
+      },
+      "packaging_defects_fixed": [
+        "bytecode pre-compilation at setup",
+        "post-calibration step missing from RUN.md",
+        "env.sh let site.env override the caller's GPU/CPUS/PORT"
+      ]
     }
   }
 }

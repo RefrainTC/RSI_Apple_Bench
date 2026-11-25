@@ -14,7 +14,9 @@ original vLLM code: `vllm bench serve --request-rate 1 --num-prompts 100 --rando
 
 Your score is a ratio, so no absolute figure is quoted. The scorer runs your tree and the unmodified tree on the same
 GPU in alternating order (ABBA), after 2 untimed warm-ups, takes original TPOT / your TPOT for each of 2 pairs, and
-scores the median. 1.0x scores nothing.
+scores the median. The reward is continuous, speedup over 1.0 measured against the maintainer's repair: a tree within
+noise of 1.0x gets the verdict `no_gain` but can still show a small reward (the untouched tree once read 1.0022x,
+reward 0.024).
 
 Outputs must not change beyond numerical near-ties. A job scores zero if any check fails:
 - a correctness client sends a fixed prompt set greedily with logprobs, one by one and all at once: at least 90 % of
@@ -31,17 +33,24 @@ or what it reached; your result will be read against it. Stop when you cannot fi
 
 ## Measuring
 
-The candidate is a **workspace directory**: `instruction.md`, `WORKLOAD.md`, `dev_run.sh` and `repo/vllm/`, the
-Python source of the installed vLLM. The server imports `repo/vllm/` through an overlay on the unmodified venv, so what
-you change there is what is measured. `repo/` is a git repository whose first commit is the pristine tree, so
-`git diff` is your patch.
+The candidate is a **workspace directory**. `package/RUN.md` step 5 (`bash harness/build_workspace.sh
+tasks/iso16436`) builds it at `package/tasks/iso16436/workspace`: `instruction.md`, `WORKLOAD.md`, `dev_run.sh` and
+`repo/vllm/`, the Python source of the installed vLLM. The server imports `repo/vllm/` through an overlay on the
+unmodified venv, so what you change there is what is measured.
+
+- **Work in place, in `tasks/iso16436/workspace` itself.** Its `dev_run.sh` always measures that directory: run from
+  a copy, it silently measures the untouched workspace.
+- `repo/` is its own git repository whose first commit is the pristine tree. Run `git diff` **inside `repo/`** to see
+  your patch: the workspace root is a separate repository that ignores `repo/`, so `git diff` there shows nothing.
+- The workspace holds an older `instruction.md` (another title, no Scoring, Measuring or Rules sections). This text
+  takes precedence.
 
 - `bash dev_run.sh` snapshots the workspace, runs the gate, starts the server with your code and runs the load once
   (about 3-4 minutes). `--baseline` also runs the original right after (compare against it: a single run's TPOT varies
   by about ±1 %); `--correct` also runs the output check; `RATE=...`, `NP=...`, `IN=...`, `OL=...` change the load for
   exploration. Scoring always uses the defaults. Results land in `dev_runs/<id>/`.
 - The official score is taken by the operator from the package root after calibration (`package/RUN.md` steps 1-6):
-  `bash harness/score.sh tasks/iso16436 <label> <workspace dir>`. It checks the scorer's integrity, snapshots and gates
+  `bash harness/score.sh tasks/iso16436 <label> tasks/iso16436/workspace`. It checks the scorer's integrity, snapshots and gates
   the workspace, runs the correctness client, 2 warm-ups and 2 ABBA pairs, and writes
   `tasks/iso16436/results/<label>/summary.md`. One scoring job takes about 19 minutes of GPU time.
 

@@ -37,5 +37,5 @@ gate = "tolerance: output and image-token counts; resolved vllm_config (num_gpu_
 rtx4090 = { ref = 1.69, aa_max_pct = 3.6, jobs = 10, minutes_per_scoring = 11 }
 
 [metadata.rsi_apple_bench.acceptance]
-independent = "PASS-with-fixes"
+independent = "PASS-with-fixes (same server); PASS on a second server (2-GPU, 8 scoring jobs 1.660-1.730, but calibration A/A 9.45 % and 6.74 %)"
 report = "docs/acceptance/batch5.md"

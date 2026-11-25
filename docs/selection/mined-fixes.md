@@ -1,6 +1,6 @@
 # Fixes mined from vLLM and SGLang history
 
-**Short answer.** After ISO-Bench ran out, we mined our own list of 88 performance fixes from vLLM and SGLang history, then searched for more with the same rules. We took 18 candidates into batches 4-6 on RTX 4090s (2 of them turned out not to be runnable). **10 became full tasks**; 1 more passed the screen but is too small to calibrate. Reading each fix's code change first, and choosing fixes whose saving per step is large next to the step time, raised the hit rate from 8 of 29 (ISO-Bench) to about half. Two lessons stand out: the load matters as much as the fix, and a human fix can itself be wrong (SGLang #10709).
+**Short answer.** After ISO-Bench ran out, we mined our own list of 88 performance fixes from vLLM and SGLang history, then searched for more with the same rules. We took 22 candidates into batches 4-7 on RTX 4090s (2 of them turned out not to be runnable). **11 became full tasks.** Three more passed the screen but were not built: one is too small to calibrate, and two (batch 7) ran out of GPU time. Reading each fix's code change first, and choosing fixes whose saving per step is large next to the step time, raised the hit rate from 8 of 29 (ISO-Bench) to about half. Two lessons stand out: the load matters as much as the fix, and a human fix can itself be wrong (SGLang #10709).
 
 ## What is in the 88-fix list?
 
@@ -88,15 +88,28 @@ The 88-fix list was used up for our GPUs, so we searched recent fixes again with
 - **A guess, untested.** The fix's `CachedKernel` keys compiled kernels only on `(NUM_SLICES, BLOCK_M)`, so it may reuse a kernel that Triton specialised for other argument values.
 - **What we did not check:** which arm is right. We stopped work on N4. If the guess is correct, the merged human fix is a correctness bug, and a benchmark that used it as the reference would reward an agent for reproducing it.
 
-## Batch 7
+## Batch 7: 4 more newly mined fixes
 
-Four more candidates were mined with the batch-6 rules and their priors written (vLLM #16963, SGLang #17005, SGLang #8724, vLLM #21862; expected 1.8 passes). At the time of writing no screen results exist.
+Mined with the batch-6 rules, plus batch 6's lessons: Python-only changes that keep outputs bit-identical; a removed cost that the load provably makes large; a changed function that runs on every step; and a front end that can keep the scheduler fed. A sub-search proposed six candidates; we took four and wrote the priors.
+
+| ID / PR | What the fix removes | Prior P | Expected | Result | Status |
+|---|---|---|---|---|---|
+| M2 SGLang #17005 | with `return_logprob`, every output message re-converts **all** log-probability positions so far into Python lists, O(n²) per request in the tokenizer manager | 0.45 | 1.3-1.9× | **1.42×**; output ids, text, log-probabilities and top-20 lists identical | **full task** `fix_sglang_17005_logprob_position_convert` (REF 1.40 ± 3%) |
+| M1 vLLM #16963 | the incremental detokenizer's start-up scan decodes every prompt suffix when a prompt ends in a lone UTF-8 fragment token, O(L²) per request | 0.6 | 5-15× | **13.5×**, but the fix's outputs differed from the parent's (and between fix runs) with the engine in its own process; **13.2×, outputs identical** with the engine in-process (adjusted load, prior written first) | passes the screen in-process; **not built** (no GPU time left) |
+| M4 vLLM #21862 | with more than 128 structured-output requests, grammar bitmasks are filled in parallel threads instead of a serial loop | 0.35 | 1.1-1.5× | 4.9× on one pair, but the parent's own outputs were not reproducible with the engine in its own process (the grammar-compilation race seen in N1); **5.5×, outputs identical** in-process with 128 output tokens (adjusted load, prior written first) | passes the screen in-process; **not built** (no GPU time left) |
+| M3 SGLang #8724 | each prefill batch flattens new tokens with `sum(list, [])`, O(B²) copying | 0.4 | 1.2-1.4× | about **1.05×** on one pair; the A/A run was killed by the memory watchdog (24.1 GB); outputs differed between arms in 2 of 3 reps (timing-dependent batch shapes) | **failed**; no adjusted load (a smaller prefill batch shrinks the very term it measures) |
+
+- **Hit rate:** 1 of 4 on the loads of record with identical outputs (M2), against 1.8 expected; 3 of 4 counting the two in-process adjusted loads.
+- **M2 (#17005).** Calibrations 1.406 and 1.400 (the latter from an empty directory), A/A within 1.8%, about 64 min per calibration and 23 min per scoring job. Its correctness pass is the first in these packages to compare the top-k lists too, which is what catches the `stale` and `notop` variants. Transfer loads behave as the mechanism predicts: top-5 instead of top-20 gives 1.095×, and no log-probabilities gives 0.991× (the negative control). The gain needs log-probabilities on long outputs, so it matters for evaluation and RL pipelines that score every token, not for most serving traffic.
+- **M4's gain is far above its prior.** The parent spends about 165 ms more per decode step than the fix, where the prior assumed 2.6-10 ms of mask filling. Which part of the fix removes it (the threaded fill or the cached termination check) was not checked.
+- **Notes for building M1 or M4 later.** Both need the engine in-process (`VLLM_ENABLE_V1_MULTIPROCESSING=0`), and a task text must say so. M1's load is extreme by design: every prompt ends in a fragment token, while on plain random prompts only about 4% of requests hit the slow scan.
+- M3 needed one extra package (`openai`) that its engine imports but its dependencies do not pull in; it was added to both arms.
 
 ## What did the mined batches teach?
 
 **The rule works, but only on the load it was written for.** Counting the work removed per step against the step time predicted every clear pass and every "too small" result: C53's single blocking copy per step (0.7 ms of a 5.7 ms step), C48's 64 syncs per step, C21's few microseconds per layer, N3's near-empty n-gram scan.
 
-**The load matters as much as the fix.** Four real fixes showed no clean gain on the load we fixed in advance, each for a reason the prior had not named:
+**The load matters as much as the fix.** Six real fixes showed no clean, gateable gain on the load we fixed in advance, each for a reason the prior had not named:
 
 | Fix | What hid the gain on the first load | What showed it |
 |---|---|---|
@@ -104,6 +117,7 @@ Four more candidates were mined with the batch-6 rules and their priors written 
 | C47 | the parent's speed had two modes per process at batch 32 | batch 64 |
 | C77 | requests reached the engine too slowly for the faster encoder to matter | one large image per request, one request per call |
 | C15 | the parent's run time had two modes | batch 1 |
+| M1, M4 | with the engine in its own process, batch shapes (and so outputs) depended on request arrival timing, so no exact gate was possible | the engine in-process |
 
 So a prior should state the cache state, the batch size and how requests reach the engine, not only the mechanism. Each adjusted load had its own prior written before it ran.
 
@@ -115,7 +129,8 @@ So a prior should state the cache state, the batch size and how requests reach t
 | Mined, batch 4 | 9 (1 not runnable) | 4 | 6 |
 | Mined, batch 5 | 4 (1 not runnable) | 1 | 3 |
 | Mined, batch 6 | 5 | 2 (N4 excluded) | 2 |
-| **All** | **47 (45 runnable)** | **15** | **19** |
+| Mined, batch 7 | 4 | 1 | 3 |
+| **All** | **51 (49 runnable)** | **16** | **22** |
 
 Across all batches with a written prior, the expected number of passes was close to the observed number every time, and from batch 3 on the per-candidate probabilities beat a constant base rate.
 

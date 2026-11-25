@@ -7,32 +7,100 @@
   "gate": "exact: counts, settings incl. structured_outputs_config (num_gpu_blocks ignored), timed-rep digests, 24-question thinking + JSON pass; one rerun in scoring mode when exactly one rep of one run differs",
   "gpus": {
     "rtx4090": {
-      "jobs": [1.789, 1.791, 1.805, 1.787, 1.791, 1.802, 1.773, 1.761],
+      "jobs": [
+        1.789,
+        1.791,
+        1.805,
+        1.787,
+        1.791,
+        1.802,
+        1.773,
+        1.761
+      ],
       "jobs_note": "4-GPU server: calibration GPU3; empty-directory calibration and scoring GPU2; scoring 1.787 (fail:exact, one flipped fix rep), 1.791, 1.802; re-verify after the harness fixes, calibration and scoring GPU3. All jobs that passed the gate are ties_ref.",
       "aa_max_pct": 2.54,
       "aa_max_pct_note": "0.46 (GPU3 calibration), 2.47 (GPU2 empty-directory calibration), 2.54 (re-verify); screen 1.3. aa_band 3 % set post hoc after the GPU2 calibration",
-      "median_rep_s": {"parent": "13.66-14.00", "fix": "7.63-7.68"},
-      "digest_flips": {"parent_runs": "1 of 69 (1 of 205 reps)", "fix_runs": "1 of 38 (1 of 114 reps)", "nogrammar_transfer": "1 rep (12 of 64 requests)"},
+      "median_rep_s": {
+        "parent": "13.66-14.00",
+        "fix": "7.63-7.68"
+      },
+      "digest_flips": {
+        "parent_runs": "1 of 69 (1 of 205 reps)",
+        "fix_runs": "1 of 38 (1 of 114 reps)",
+        "nogrammar_transfer": "1 rep (12 of 64 requests)"
+      },
       "peak_vram_mib": 20110,
       "minutes_per_scoring": 8.6,
       "minutes_calibration": 24,
       "minutes_setup": "12-18",
-      "transfers": {"b8": 1.347, "nogrammar_negative_control": 1.000}
+      "transfers": {
+        "b8": 1.347,
+        "nogrammar_negative_control": 1.0
+      }
     }
   },
   "variants": [
-    {"name": "noadvance", "speedup": 1.789, "verdict": "fail:correct", "note": "timed outputs equal the parent's; only the correctness pass catches it"},
-    {"name": "short", "speedup": 2.34, "verdict": "fail:counts,exact"},
-    {"name": "noparser", "speedup": 1.76, "verdict": "fail:exact,correct,settings"}
+    {
+      "name": "noadvance",
+      "speedup": 1.789,
+      "verdict": "fail:correct",
+      "note": "timed outputs equal the parent's; only the correctness pass catches it"
+    },
+    {
+      "name": "short",
+      "speedup": 2.34,
+      "verdict": "fail:counts,exact"
+    },
+    {
+      "name": "noparser",
+      "speedup": 1.76,
+      "verdict": "fail:exact,correct,settings"
+    }
   ],
   "acceptance": {
-    "verdict": "in progress",
-    "interim": "provisional PASS-with-fixes",
-    "host": "same 4-GPU server, GPU0",
-    "speedups": [1.790, 1.791],
-    "speedups_note": "calibration (pairs 1.7772-1.7967; fail:exact because one parent run flipped its third rep, and calibration has no rerun rule; correctness 24/24), first scoring job (ties_ref, all checks pass)",
-    "aa_max_pct": 2.22,
-    "suggested_fix": "extend the one-rerun rule to calibration mode (not yet applied)",
-    "second_host": "an earlier package version ran on the 2-GPU server; not summarized, not used"
+    "verdict": "PASS-with-fixes",
+    "host": "same 4-GPU server, GPUs 0 and 1",
+    "speedups": [
+      1.7899,
+      1.7895,
+      1.7909,
+      1.7852,
+      1.7962
+    ],
+    "median": 1.79,
+    "speedups_note": "calibration (fail:exact: one parent run flipped one timed rep; calibration has no rerun rule), second calibration (ties_ref), scoring GPU0 x2, scoring GPU1 with empty caches; all scoring jobs ties_ref",
+    "aa_max_pct": [
+      2.22,
+      1.0
+    ],
+    "flips": {
+      "parent_runs": "1 of 42 (1 of 126 reps)",
+      "fix_runs": "0 of 19 (0 of 57 reps)",
+      "warmups": "0 of 13"
+    },
+    "fresh_calibration_flip_chance": "about 4 in 10 (25 runs at ~1 flip per 50 runs)",
+    "variants_same_verdict": "3 of 3",
+    "transfers": {
+      "b8": 1.356,
+      "nogrammar": 0.999
+    },
+    "suggested_fixes": "calibration: judge exact on fix-vs-parent only or allow one rerun; RUN.md section 5 times to ~24 + 9 min (not yet applied)",
+    "second_host": {
+      "verdict": "PASS",
+      "host": "2-GPU server",
+      "package_version": "before the harness fixes",
+      "calibration": 1.7878,
+      "scoring_jobs_range": [
+        1.778,
+        1.806
+      ],
+      "scoring_jobs_n": 12,
+      "aa_max_pct": 2.04,
+      "flips": "0 (123 fix-vs-parent timed reps, 15 parent-vs-parent reps)",
+      "transfers": {
+        "b8": 1.371,
+        "nogrammar": 0.999
+      }
+    }
   }
 }

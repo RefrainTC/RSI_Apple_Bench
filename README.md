@@ -2,20 +2,20 @@
 
 Apple's [RSI-Inference-Bench](https://github.com/apple-aiml-research/ml-rsi-inference-bench) asks coding agents to speed up real LLM inference engines (vLLM, SGLang) on data-center GPUs: H100s and B200s, with models of up to hundreds of GB. We wanted to know how much of that can be tested on consumer cards: one RTX 5090 (32 GB) and RTX 4090s (24 GB).
 
-The answer: very little of Apple's benchmark runs as is. So we also built our own tasks, in Apple's format, mostly from real performance fixes in vLLM and SGLang history. This repo holds **21 tasks** that run and measure reliably on these GPUs. Each task has:
+The answer: very little of Apple's benchmark runs as is. So we also built our own tasks, in Apple's format, mostly from real performance fixes in vLLM and SGLang history. This repo holds **22 tasks** that run and measure reliably on these GPUs. Each task has:
 
 - a known correct answer (the reference fix);
 - a speedup calibrated against run-to-run noise;
 - an output check;
 - a set of deliberately broken or cheating versions that the check must reject.
 
-For 16 of the 21, an independent tester rebuilt the task from scratch and got the same numbers. For one more, the rebuild worked but the score read 3–4% lower. Two are still being tested, and two (#7822 and #16436) have so far only been rebuilt from an empty directory by their authors.
+For 20 of the 22, an independent tester rebuilt the task from scratch and got the same numbers. For Φ-Bench the rebuild worked, but the score read 3–4% lower. The newest task (#17005) has so far been rebuilt from an empty directory only by its authors.
 
 | | Screened | Usable here |
 |---|---|---|
 | Apple RSI-Inference-Bench tasks | 37 | 2: one as is, one with a smaller model |
 | Fixes from ISO-Bench's list of vLLM/SGLang performance fixes | 29 measured on GPU | 7 |
-| Fixes we mined from vLLM/SGLang history | 18 measured on GPU (from 88 mined + 5 found later) | 10 |
+| Fixes we mined from vLLM/SGLang history | 22 measured on GPU (from 88 mined + 9 found later) | 11 |
 | Other | an Apple-style task scaled down to one GPU; one task ported from Φ-Bench | 2 |
 
 ## The tasks
@@ -28,10 +28,10 @@ Each GPU column gives the reference fix's speedup on the measured job (the media
 | [apple_regression_sglang_stream_decode_tps_c1_small](tasks/apple_regression_sglang_stream_decode_tps_c1_small/) | Apple, smaller model | SGLang: slow token streaming at concurrency 1 | 1.22× (0.8%) | 1.14× (0.2%) | yes, 4090 |
 | [optimize_vllm_qwen35_4b_high_concurrency](tasks/optimize_vllm_qwen35_4b_high_concurrency/) | ours, Apple-style | vLLM throughput under heavy concurrent load | 1.32× (0.5%) | 1.31× (0.2%) | yes, both GPUs |
 | [phibench_vllm_scheduler](tasks/phibench_vllm_scheduler/) | Φ-Bench, ported | vLLM scheduling of mixed request bursts | 1.61× (0.5%) | 1.65× (0.2%) | partly: setup works, score 3–4% lower on a quieter host |
-| [fix_vllm_7822_prefix_caching](tasks/fix_vllm_7822_prefix_caching/) | vLLM history (ISO-Bench) | repeated prompt prefixes are recomputed | - | 1.48× (0.2%) | not yet (authors' empty-directory rebuild only) |
+| [fix_vllm_7822_prefix_caching](tasks/fix_vllm_7822_prefix_caching/) | vLLM history (ISO-Bench) | repeated prompt prefixes are recomputed | - | 1.48× (0.2%) | yes; the ±0.5% band is tight, so about 1 correct job in 5 lands just outside it |
 | [fix_vllm_12380_cuda_graph_decode](tasks/fix_vllm_12380_cuda_graph_decode/) | vLLM history (ISO-Bench) | decode falls off CUDA graphs | - | 1.51× (2.3%) | yes |
 | [fix_sglang_6994_lora_host_sync](tasks/fix_sglang_6994_lora_host_sync/) | SGLang history (ISO-Bench) | LoRA serving waits on the GPU too often | - | 1.47× (1.2%) | yes |
-| [fix_vllm_16436_sampler_host_sync](tasks/fix_vllm_16436_sampler_host_sync/) | vLLM history (ISO-Bench) | the sampler waits on the GPU once per step | - | 1.09× (0.4%) | not yet (authors' empty-directory rebuild only) |
+| [fix_vllm_16436_sampler_host_sync](tasks/fix_vllm_16436_sampler_host_sync/) | vLLM history (ISO-Bench) | the sampler waits on the GPU once per step | - | 1.09× (0.4%) | yes |
 | [fix_vllm_13365_ngram_draft_lookup](tasks/fix_vllm_13365_ngram_draft_lookup/) | vLLM history (ISO-Bench) | slow n-gram draft lookup in speculative decoding | - | 1.09× (0.5%) | yes |
 | [fix_vllm_14930_spec_decode_verify](tasks/fix_vllm_14930_spec_decode_verify/) | vLLM history (ISO-Bench) | slow verification step in speculative decoding | - | 1.09× (0.2%) | yes |
 | [fix_vllm_14857_mamba2_prefill](tasks/fix_vllm_14857_mamba2_prefill/) | vLLM history (ISO-Bench) | slow Mamba2 prefill loop | - | 1.06× (0.3%) | yes |
@@ -43,8 +43,9 @@ Each GPU column gives the reference fix's speedup on the measured job (the media
 | [fix_vllm_35442_spec_accept_count_copy](tasks/fix_vllm_35442_spec_accept_count_copy/) | vLLM history (mined) | speculative decoding: the CPU waits on the GPU every step for the accepted-token count | being measured | 1.04× (0.4%) | yes, after a harness fix |
 | [fix_vllm_27418_vit_patch_embed](tasks/fix_vllm_27418_vit_patch_embed/) | vLLM history (mined) | the vision encoder's patch embedding runs a slow 3-D convolution | being measured | 1.69× (3.6%) | yes, after a harness fix |
 | [fix_sglang_14956_mrope_text_sync](tasks/fix_sglang_14956_mrope_text_sync/) | SGLang history (mined) | same code path as #9460, text-only requests | 1.49× (0.7%) | 1.31× (1.4%) | yes, second server |
-| [fix_vllm_30056_reasoning_end_scan](tasks/fix_vllm_30056_reasoning_end_scan/) | vLLM history (mined) | structured output with a reasoning model rescans the whole sequence every step | being measured | 1.79× (2.5%) | in progress |
-| [fix_sglang_20503_waiting_queue_set](tasks/fix_sglang_20503_waiting_queue_set/) | SGLang history (mined) | the scheduler rebuilds a lookup set for every waiting request | - | 1.08× (3.0%; the weakest task) | in progress |
+| [fix_vllm_30056_reasoning_end_scan](tasks/fix_vllm_30056_reasoning_end_scan/) | vLLM history (mined) | structured output with a reasoning model rescans the whole sequence every step | being measured | 1.79× (2.5%) | yes, also on a second server; a fresh calibration can fail on a rare output flip |
+| [fix_sglang_20503_waiting_queue_set](tasks/fix_sglang_20503_waiting_queue_set/) | SGLang history (mined) | the scheduler rebuilds a lookup set for every waiting request | - | 1.08× (3.0%; the weakest task) | yes |
+| [fix_sglang_17005_logprob_position_convert](tasks/fix_sglang_17005_logprob_position_convert/) | SGLang history (mined) | returning top-20 log-probabilities for long generations takes far longer than the GPU needs | - | 1.40× (1.8%) | not yet (authors' empty-directory rebuild only) |
 
 A few things to keep in mind:
 - #9460 and #14956 fix the same code path, so count them as one family.
@@ -71,7 +72,7 @@ The packages are copies of the ones we verified. In the public copies, internal 
 
 ## Running a task
 
-Each `package/RUN.md` gives the steps. For the 10 packages mined from history (and their shared harness), in short:
+Each `package/RUN.md` gives the steps. For the 11 packages mined from history (and their shared harness), in short:
 
 1. Copy `site.env.example` to `site.env` and set your GPU, CPU set, port and a local staging directory.
 2. Run `export TZ=UTC`. Some setup scripts pass dates to `uv --exclude-newer`, which reads them in local time.

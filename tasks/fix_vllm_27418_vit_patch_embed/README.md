@@ -2,7 +2,9 @@
 
 On one large image per request (1344 x 1344, requests sent one at a time), the human fix makes Qwen2-VL-2B requests
 **1.69x** faster on an RTX 4090 (band ±3 %, A/A up to 3.6 %). An independent tester rebuilt the package and got 1.679
-(PASS-with-fixes: one memory limit was too tight, now fixed and re-verified).
+(PASS-with-fixes: one memory limit was too tight, now fixed and re-verified). A second independent test on another
+server also passed (8 scoring jobs, 1.660-1.730, all in band), but its calibration A/A was **9.45 % and 6.74 %**, far
+noisier than on our server.
 
 Two things to know before using this task:
 - **The gain shows only on large single images.** On the load we first wrote down (32 images of 448 x 448 in one
@@ -61,6 +63,7 @@ Fix median rep 1.46-1.51 s, parent 2.47-2.61 s: ~0.25 s per request, close to th
 | GPU | REF | Band | A/A max deviation | Jobs |
 |---|---|---|---|---|
 | RTX 4090 (4-GPU server) | **1.69** (median of the 4 jobs that set it: 1.685) | ±3 % (1.639-1.741); between-job SD 0.6 % | 0.7 % (GPU3), 3.6 % (empty-directory, one slow parent rep), 3.25 % (re-verify); screen up to 3.9 %; tester 1.24 % | 10 by the authors, 3 by the tester |
+| RTX 4090 (2-GPU server) | calibrations 1.6881 and 1.7191; 8 scoring jobs 1.660-1.730 (second tester) | all inside | **9.45 % and 6.74 %** | 10 |
 | RTX 5090 | not run | - | - | - |
 
 - Jobs that set REF: calibration 1.691 (GPU3), scoring 1.700 (GPU2), empty-directory calibration 1.679 and scoring
@@ -112,10 +115,17 @@ The independent tester got the same verdicts and the same re-read numbers to the
 1. **Large single images only.** The load is built to put the vision encoder on the critical path: one large image,
    one request at a time. With many requests in one `generate()` call (the prior's load w1) the gain disappears behind
    request hand-over (0.97x in the screen).
-2. **On the prior's load the fix is slower.** Our two w1 transfer pairs read 0.85x and 0.92x (the tester: 0.785 and
-   0.884). Our reading, not profiled: the fix's engine runs more, smaller steps there, each with a fixed cost.
+2. **On the prior's load the fix is no faster, and often slower.** Our two w1 transfer pairs read 0.85x and 0.92x (the
+   first tester: 0.785 and 0.884; the screen: 0.97x). On the 2-GPU server one pair read 1.047x. Our reading, not
+   profiled: the fix's engine runs more, smaller steps there, each with a fixed cost, and the result depends on how
+   requests arrive.
 3. **Version-dependent.** The gain needs torch 2.9.0 / cuDNN 9.10, which routes the bf16 Conv3d to its slow path. A
    torch where it reaches cuDNN would show ~1.0x.
+7. **The A/A noise depends on the host, and can exceed `aa_band`.** On the 2-GPU server the two calibrations had A/A
+   max deviations of **9.45 % and 6.74 %**, against 0.7-3.6 % on our server and an `aa_band` of 5 %. Some scoring jobs
+   there contained single slow pairs (1.46-1.58); the job's median pair absorbed them, and all 8 jobs stayed in the band.
+   Solo and both-GPU tests on that host were tight (1.675-1.725). The cause was not found. On such a host a single
+   pair says little, and a `no_gain` call near 1.05 is not reliable; compare candidates on several jobs.
 4. **The re-read can only reject unlikely tokens.** Within 1 nat of the top choice, a candidate may write different,
    also plausible tokens. The 8-token timed outputs are generic openings ("The image shows ..."), so the image pass
    carries most of the checking of what the model sees.
@@ -156,7 +166,15 @@ warm-up, and this text pass does not depend on the cache). Re-verified from a ne
 build OK in 1,167 s, calibration 1.679 (A/A 3.25 %, text pass 24/24, re-read worst gap 0.125), scoring 1.686
 `ties_ref`; `subpatch` with `MEMU` 0.50 still `fail:tf`, peak 21,374 MiB, 2.4 GB under the watchdog.
 
-Second-host runs on the 2-GPU server exist but are not summarized yet, so they are not reported here.
+**Second server: PASS, with noisier A/A** (`docs/acceptance/batch5.md`). Another independent tester ran the package on
+the 2-GPU server (a second RTX 4090 server with 2 GPUs), in the version from before the harness fixes (re-read memory
+pool `MEMU` 0.60). No deviation from `RUN.md`.
+- Calibrations **1.6881** and **1.7191**, A/A max **9.45 %** and **6.74 %** (see limit 7).
+- 8 scoring jobs, all `ties_ref`: 1.6986, 1.7301, 1.6599, 1.6753, 1.6945, 1.6814, 1.6816, 1.6617.
+- Variants: `subpatch` `fail:tf` (0.75 nats, 2.5 %; its re-read peaked at 23.8 GB with the old memory pool), `short`,
+  `lowres` and `skipimg` fail as on our server; `cheappatch` accepted (1.7506 in one pair, `above_ref`).
+- Transfers (single pairs): 448 x 448 images one per call 1.297; the prior's load w1 **1.047**, where our pairs read
+  0.85 and 0.92 (see limit 2).
 
 ## How to run it
 

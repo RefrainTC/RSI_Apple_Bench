@@ -1,0 +1,41 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_sglang_17005_logprob_position_convert"
+description = "Long generations that return logprobs (the produced token's logprob and the top 20 per position) take longer on SGLang than one RTX 4090 needs. The load is one offline call with 192 requests x 64 random ids -> 2,048 greedy tokens, all with top-20 logprobs, no streaming; scored on the median rep wall time against the unmodified tree in interleaved pairs on the same GPU. Outputs and every returned logprob must be bit-identical: token counts, live ServerArgs, digests over ids, text and logprob lists, and a 24-prompt pass that also compares the top-5 lists."
+keywords = ["sglang", "optimization", "logprobs", "tokenizer-manager", "cpu-overhead", "long-output", "offline"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]
+allow_internet = false   # setup (package/RUN.md steps 2-5) downloads sources, the lock, CUDA pieces and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "SGLang history"
+upstream_pr = "https://github.com/sgl-project/sglang/pull/17005"
+selected_from = "mined, batch 7 (candidate M2)"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/sgl-project/sglang.git"
+baseline_commit = "075c5a5789e77de393dc5490099a8f7d3ccd4d12"
+reference_fix_commit = "339915ce2b8c9c6cb73a4a52d3d084d8f66c967f"
+engine_version = "SGLang source at the parent commit (2026-01, built from python/), torch 2.9.1+cu128 with cuDNN 9.10, sgl-kernel 0.3.20, flashinfer 0.5.3, triton 3.5.1, transformers 4.57.1, Python 3.10"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2.5-0.5B-Instruct"
+revision = "7ae557604adf67be50417f59c2c2f167def9a775"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median rep wall time over 3 reps (one call with 192 requests x 64 random ids -> 2048 greedy tokens, top-20 logprobs, no streaming), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.40
+band_pct = 3.0
+aa_band_pct = 3.0
+gate = "exact: output token counts, live ServerArgs (ports ignored), digest of every timed rep (ids, text, produced-token logprobs and top-20 lists, logprobs rounded to 1e-3), and a 24-prompt pass (256 tokens, top-5) with identical ids, logprobs within 1e-3 and identical top-5 lists"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.40, aa_max_pct = 1.77, jobs = 7, jobs_median = 1.406, minutes_per_scoring = 23, note = "2 calibrations (1.406, 1.400) set REF; 5 scoring jobs 1.399-1.427, all ties_ref" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "not yet"
+report = "none; the authors' empty-directory run only (no RTX 5090 run)"

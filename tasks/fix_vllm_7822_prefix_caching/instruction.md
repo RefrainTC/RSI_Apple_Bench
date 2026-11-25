@@ -14,7 +14,8 @@ the second is recorded and checked.
 
 Your score is a ratio, so no absolute figure is quoted. The scorer runs your tree and the unmodified tree on the same
 GPU in alternating order (ABBA), after 2 untimed warm-ups on other questions, takes original time / your time for each
-of 3 pairs, and scores the median. 1.0x scores nothing.
+of 3 pairs, and scores the median. The reward is continuous, speedup over 1.0 measured against the maintainer's
+repair: a tree within noise of 1.0x gets the verdict `no_gain` but can still show a small reward.
 
 Outputs must not change beyond numerical near-ties. A job scores zero if any check fails:
 - every scored request, in both passes, has exactly 200 tokens, and the same text whenever the token ids match;
@@ -30,18 +31,24 @@ or what it reached; your result will be read against it. Stop when you cannot fi
 
 ## Measuring
 
-The candidate is a **workspace directory**: `instruction.md`, `WORKLOAD.md`, `dev_run.sh` and `repo/vllm/`, the
-Python source of the installed vLLM. The benchmark imports `repo/vllm/` through an overlay on the unmodified venv, so
-what you change there is what is measured. `repo/` is a git repository whose first commit is the pristine tree, so
-`git diff` is your patch.
+The candidate is a **workspace directory**. `package/RUN.md` step 5 (`bash harness/build_workspace.sh
+tasks/iso7822`) builds it at `package/tasks/iso7822/workspace`: `instruction.md`, `WORKLOAD.md`, `dev_run.sh` and
+`repo/vllm/`, the Python source of the installed vLLM. The benchmark imports `repo/vllm/` through an overlay on the
+unmodified venv, so what you change there is what is measured.
 
+- **Work in place, in `tasks/iso7822/workspace` itself.** Its `dev_run.sh` always measures that directory: run from a
+  copy, it silently measures the untouched workspace and reports no gain even for a correct fix.
+- `repo/` is its own git repository whose first commit is the pristine tree. Run `git diff` **inside `repo/`** to see
+  your patch: the workspace root is a separate repository that ignores `repo/`, so `git diff` there shows nothing.
+- The workspace holds an older `instruction.md` (another title, no Scoring, Measuring or Rules sections). This text
+  takes precedence.
 - `bash dev_run.sh` snapshots the workspace, runs the gate and runs the benchmark once with your code (about 1
   minute). `--baseline` also runs the original right after; `--correct` also runs the greedy check; `OL=...` and
   `REPEAT=...` change the output length and number of requests for exploration. Scoring always uses the defaults.
   Results land in `dev_runs/<id>/` (`summary.json` with both pass times and how many prompt tokens the model actually
   computed in the first pass, `gate.txt`, short log tails). Identical runs differ by well under 1 %.
 - The official score is taken by the operator from the package root after calibration (`package/RUN.md` steps 1-6):
-  `bash harness/score.sh tasks/iso7822 <label> <workspace dir>`. It checks the scorer's integrity, snapshots and gates
+  `bash harness/score.sh tasks/iso7822 <label> tasks/iso7822/workspace`. It checks the scorer's integrity, snapshots and gates
   the workspace, runs the correctness check, 2 warm-ups and 3 ABBA pairs, and writes
   `tasks/iso7822/results/<label>/summary.md`. One scoring job takes about 5 minutes of GPU time.
 

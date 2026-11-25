@@ -2,8 +2,8 @@
 
 The sampler of vLLM 0.8.5 applies the repetition penalty with data-dependent indexing, which makes the CPU wait for
 the GPU on every sampling step. The human fix lowers median TPOT by **1.0855x** on an RTX 4090 (7 jobs, band ±1.0 %).
-The effect is small, so job-to-job drift matters: 1 % of drift moves the reward by about 11 % of its range. No
-independent tester has rebuilt it yet; the authors' own empty-directory test reproduced it.
+The effect is small, so job-to-job drift matters: 1 % of drift moves the reward by about 11 % of its range. An
+independent tester rebuilt the package and reproduced it: PASS, every job inside the band.
 
 Terms used below:
 - **parent**: the unmodified tree, commit `f728ab8e`. **fix**: the human fix, commit `299ebb62`.
@@ -84,6 +84,8 @@ Median TPOT: parent ~5.45 ms, fix ~5.00 ms.
 - C3w's lack of effect is unexplained.
 - Outputs are checked by text equality share and a correctness client, not token by token on every request.
 - Two further jobs on GPU0 that were planned were not run, so REF rests on 7 jobs on the 4-GPU server.
+- **The server port is fixed at 18430 + GPU index** and ignores the package's `PORT` setting (`package/RUN.md` says so).
+  Two jobs on the same GPU index, for example in two package copies on one machine, collide.
 - The harness default band (±0.5 % around your own calibration REF) labels a job at the card's median
   `above_baseline_below_ref` against a ~1.093 calibration. That is expected; the card's band is ±1.0 % around 1.0855.
 
@@ -98,13 +100,27 @@ Median TPOT: parent ~5.45 ms, fix ~5.00 ms.
 | Calibration | 4459 s (card 73 min) |
 | One scoring job (gate, correctness client, 2 warm-ups, 2 pairs) | ~1200 s (card ~19 min) |
 
-One run is about 165 s, ~50 s of it server start-up. Disk: ~30 GB under the package directory, ~34 GB on the staging
-disk. Peak VRAM is not recorded in the sources.
+The independent test took ~19 min of setup (venvs 564 s, model 246 s, staging 313 s, workspace 13 s), 73.8 min for the
+calibration and ~19.3 min per scoring job. One run is about 165 s, ~50 s of it server start-up. Peak VRAM 21,094 MiB.
+Disk: ~30 GB under the package directory, ~34 GB on the staging disk.
 
 ## Has someone else rebuilt it?
 
-Not yet by an independent tester. The authors copied the package alone into an empty directory and followed
-`package/RUN.md`. The first copy measured the right speeds (calibration REF 1.0871; jobs 1.0910 and 1.0857) but every
+Yes. An independent tester copied the package alone into an empty directory on the 4-GPU server and followed
+`package/RUN.md`: **PASS**.
+
+- Calibration REF **1.0908** (card 1.093 single job), A/A max deviation 0.47 % (card 0.43 %).
+- Human-fix scoring jobs **1.0906** (GPU0), **1.0856** and **1.0915** (GPU1), all `ties_ref`, inside 1.0746-1.0964.
+  Median TPOT parent 5.40-5.48 ms, fix 4.97-5.03 ms. Correctness 24/24; 97-99 % identical texts.
+- Canaries: C6 (skip penalties) 1.108x, `output_mismatch`, correctness 0/24; C2 (buffer the stream) 755x,
+  `output_mismatch` via `ttft_regression`. Both as the card says.
+- The public agent path, followed from `instruction.md` alone: the untouched workspace scored 1.0022 (`no_gain`, reward
+  0.024); the human fix placed in `repo/vllm/` scored 1.0915 (`ties_ref`).
+- Notes for both history packages from that test: the shared harness version has no STOP file; two package copies
+  using the same job labels on one machine could kill each other's runs; `score.sh` leaves compile-cache roots under the
+  staging directory. The instruction now says where the workspace comes from and to work in place.
+
+Before that, the authors ran their own empty-directory test. The first copy measured the right speeds (calibration REF 1.0871; jobs 1.0910 and 1.0857) but every
 pair was flagged `venv_changed`: fresh venvs lacked the `.pyc` files the authors' venvs held, so each `vllm serve` run
 wrote ~300 of them into its run copy. Fixed by pre-compiling the bytecode at setup. The second copy, venvs
 hash-identical to the authors':

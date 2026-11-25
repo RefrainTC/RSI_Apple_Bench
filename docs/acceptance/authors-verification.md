@@ -24,6 +24,7 @@ Before calling a package ready, the authors copied each package directory alone 
 | sgl14956 | 1.3070 (1.284-1.336) | 1.3095 | 0.9% | **PASS** |
 | vllm30056 | 1.805; after fixes 1.761 (1.736-1.844) | 1.791; after fixes 1.773 | 2.47%; after fixes 2.54% (gate limit 3%, set after seeing these runs) | **PASS**, re-verified; the re-verify saw the first flip in a parent run |
 | sgl20503 | 1.087 (1.037-1.123) | 1.086 | 2.97% (stop rule 3%) | **PASS**, kept with this stated on the card |
+| sgl17005 | 1.427 (1.358-1.442) | 1.400 (1.40) | 1.77% (gate limit 3%) | **PASS** |
 
 **Builds.** In every package, both venvs' dependency freezes equal the authors' and every installed engine file hashes as the authors' build; the only exceptions are generated `_version.py` files whose version values match. Every model file matched its checksum.
 

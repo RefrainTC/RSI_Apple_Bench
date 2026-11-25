@@ -37,5 +37,5 @@ gate = "exact: output token counts, resolved vllm_config (num_gpu_blocks ignored
 rtx4090 = { ref = 1.037, aa_max_pct = 0.44, aa_max_pct_independent = 1.42, jobs = 10, minutes_per_scoring = "13-16" }
 
 [metadata.rsi_apple_bench.acceptance]
-independent = "PASS-with-fixes"
+independent = "PASS-with-fixes (same server); PASS on a second server (2-GPU, scoring 1.0383, 1.0368, 1.0376)"
 report = "docs/acceptance/batch5.md"

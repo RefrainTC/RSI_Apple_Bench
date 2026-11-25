@@ -1,0 +1,37 @@
+{
+  "task": "fix_sglang_17005_logprob_position_convert",
+  "metric": "median rep wall time over 3 reps (one call with 192 requests x 64 random ids -> 2048 greedy tokens, top-20 logprobs, no streaming), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.40,
+  "band_pct": 3.0,
+  "aa_band_pct": 3.0,
+  "gate": "exact: counts, live ServerArgs (ports ignored), timed-rep digests over ids, text, produced-token logprobs and top-20 lists (rounded to 1e-3), 24-prompt pass (256 tokens) with ids, logprobs and top-5 lists compared",
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.406, 1.400, 1.427, 1.412, 1.399, 1.401, 1.409],
+      "jobs_note": "4-GPU server: calibration GPU3, empty-directory calibration GPU2 (these two set REF), empty-directory scoring GPU2, then 4 scoring jobs (GPU3 x2, GPU2 x2); all ties_ref; median 1.406 would round to 1.41, gate left at 1.40",
+      "jobs_median": 1.406,
+      "between_job_sd_pct": 0.7,
+      "single_pairs_range": [1.379, 1.448],
+      "aa_max_pct": 1.77,
+      "aa_max_pct_note": "1.75 (GPU3 calibration), 1.77 (GPU2 empty-directory calibration)",
+      "median_rep_s": {"parent": "40.4-41.0", "fix": "28.5-29.7"},
+      "peak_vram_gb": 20.2,
+      "minutes_per_scoring": 23,
+      "minutes_calibration": 64,
+      "minutes_setup": 19,
+      "screen": 1.416,
+      "transfers": {"k5_top5_logprobs": 1.095, "nolp_no_logprobs_negative_control": 0.991},
+      "remaining_logprob_time_s": "~7 per rep with the fix (28.9 s vs 21.9 s without logprobs), not in the top-list conversion; not measured further"
+    },
+    "rtx5090": "not run"
+  },
+  "variants": [
+    {"name": "short", "speedup": 1.90, "verdict": "fail:counts,exact"},
+    {"name": "stale", "speedup": 1.40, "verdict": "fail:exact,correct", "note": "the new top-5 comparison in the correctness pass catches it (0/24)"},
+    {"name": "notop", "speedup": 1.41, "verdict": "fail:exact,correct", "note": "no faster than the fix"}
+  ],
+  "acceptance": {
+    "verdict": "not yet",
+    "note": "only the authors' empty-directory rebuild: build OK in 1,129 s, calibration 1.400, scoring 1.427 ties_ref; no independent tester, no RTX 5090 run"
+  }
+}

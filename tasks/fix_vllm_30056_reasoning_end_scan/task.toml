@@ -37,5 +37,5 @@ gate = "exact: output token counts, resolved vllm_config incl. structured_output
 rtx4090 = { ref = 1.79, aa_max_pct = 2.54, jobs = 8, minutes_per_scoring = 8.6 }
 
 [metadata.rsi_apple_bench.acceptance]
-independent = "in progress (interim: calibration 1.790, A/A 2.22 %, fail:exact from one parent rep flip; first scoring job 1.791 ties_ref; provisional PASS-with-fixes)"
-report = "docs/acceptance/batch6.md (interim)"
+independent = "PASS-with-fixes (same server, median of 5 jobs 1.790; first fresh calibration fail:exact from one parent flip); PASS on a second server (2-GPU, 0 flips in 123 reps)"
+report = "docs/acceptance/batch6.md, docs/acceptance/batch5.md (second server)"

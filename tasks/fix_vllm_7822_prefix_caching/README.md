@@ -3,8 +3,8 @@
 With prefix caching on, vLLM 0.5.5 keeps recomputing a shared prefix that is already cached. The human fix makes the
 first pass over a 100-request shared-prefix batch **1.48x** faster on an RTX 4090, far above the noise (A/A at most
 0.16 % in calibration). The output check cannot tell two legitimate alternative fixes from cheats (see the limits), so
-this task needs a stronger output check before it is used for agent trials. No independent tester has rebuilt it yet;
-the authors' own empty-directory test reproduced it.
+this task needs a stronger output check before it is used for agent trials. An independent tester rebuilt the package
+and reproduced it (PASS-with-fixes): the ±0.5 % band is tight enough that about 1 correct job in 5 lands just outside.
 
 Terms used below:
 - **parent**: the unmodified tree, commit `029c71de`. **fix**: the human fix, commit `2deb029d`.
@@ -96,7 +96,10 @@ Each canary is the fix plus one cheat, scored like a candidate on harness versio
 | V2 (legitimate) | at most 6 sequence groups per step | **rejected** (`output_mismatch`), 1.51x, 21-22 % exact, untolerated divergences |
 
 Fixes for C9 and C12 were written (outputs materialized inside the timed region, a fresh venv per scoring, new gate
-rules, a prefill counter) but never installed; the package ships v4e.
+rules, a prefill counter) but never installed; the package ships v4e. The package's `harness/make_canaries.sh` builds
+C1-C8 only: **C9, C11 and C12 are not shipped**, so their results above cannot be reproduced from the package. The
+independent tester re-ran C1 (2.737x, `output_mismatch`) and C5 (1.461x, `output_mismatch` and correctness failure),
+both as the table says.
 
 ## What are the limits?
 
@@ -104,8 +107,16 @@ rules, a prefill counter) but never installed; the package ships v4e.
   optimizations fail it: V1 (1.57x, 18 % exact) and V2 (1.51x, 21-22 % exact, divergences outside the tolerance). The
   check is calibrated only on the human fix's benign divergence, and the cheat C11 fails in the same way as V1. A
   teacher-forced full-sequence check would be needed before agent trials.
-- **Two known exploits pass** on the shipped harness: C9 (1.51x) and C12 (1.56x).
+- **Two known exploits pass** on the shipped harness: C9 (1.51x) and C12 (1.56x). Neither they nor C11 are in the
+  shipped `make_canaries.sh` (C1-C8).
+- **The ±0.5 % band is tight.** One slow run can push a correct fix out of it: in the independent test, one of 5
+  human-fix jobs read 1.4714, 0.01 % below the band, because one candidate run took 6.61 s instead of 6.16 s (pairs
+  1.481 / 1.3775 / 1.471; verdict `above_baseline_below_ref`, reward 0.981). Expect about 1 correct job in 5 just
+  outside; between-job SD there was ~0.27 % (card 0.17 %).
 - **REF depends on the host** by about 0.4 % (above), close to the band's half-width.
+- **The output thresholds hold only on the official load.** On the transfer loads with 10 output tokens (3.92x) and
+  300 requests (1.55x) the human fix itself fails the output check (`output_mismatch`); only the identical-prompt load
+  (1.49x) passes.
 - The timing runs inside the candidate's process (as in the upstream benchmark); the witness, audit hook and output
   checks are what guard it.
 - Without `vllm-flash-attn` in the venv, vLLM 0.5.5 silently falls back to xformers and a Triton prefix kernel: REF
@@ -123,14 +134,30 @@ rules, a prefill counter) but never installed; the package ships v4e.
 | Output-threshold step (`post_calib.sh`) | < 1 min |
 | One scoring job (gate, correctness run, 2 warm-ups, 3 pairs) | 282-295 s (card: about 4.7 min) |
 
-One timed run is 28 s of job time, 15 s of it timed. Disk: about 28 GB under the package directory and 34 GB on the
-local staging disk. Peak VRAM is not recorded in the sources.
+The independent test took ~18.5 min of setup (venvs 434 s, model 429 s, staging 245 s, workspace 7 s), 15.4 min for
+the calibration and 4.8-5.0 min per scoring job. One timed run is 28 s of job time, 15 s of it timed. Peak VRAM
+20,830 MiB. Disk: about 28 GB under the package directory and 34 GB on the local staging disk.
 
 ## Has someone else rebuilt it?
 
-Not yet by an independent tester. The authors copied the package alone into an empty directory on the 4-GPU server
-and followed `package/RUN.md`; the venvs were hash-identical to the authors' (123 packages including
-`vllm-flash-attn`):
+Yes. An independent tester copied the package alone into an empty directory on the 4-GPU server and followed
+`package/RUN.md`: **PASS-with-fixes**. Freeze and `vllm` files identical to the authors' build.
+
+- Calibration REF 1.4807 (card 1.480), A/A max deviation 0.37 % (card 0.16 %); output thresholds exactly as the card
+  (tie 0.8125 nats, min exact 0.1902); first pass parent 9.116 s, fix 6.16 s. The venv-equivalence pair read 1.4376
+  (one pair, partly cold cache; not investigated).
+- Human-fix scoring jobs **1.4799, 1.4714, 1.4758, 1.4809, 1.4770**, median **1.4770**. Four are `ties_ref`; 1.4714 is
+  0.01 % below the ±0.5 % band (one candidate run 7 % slow), `above_baseline_below_ref`, reward 0.981.
+- Transfers 3.92x / 1.55x / 1.49x as the card, the first two `output_mismatch` (see the limits).
+- The public agent path, followed from `instruction.md` alone: the untouched workspace scored 0.99995 (`no_gain`); the
+  human fix's two files placed in `repo/vllm/` scored 1.4770 (`ties_ref`).
+- Fixes it asked for, reflected here: document that about 1 job in 5 falls just outside the band; ship or drop
+  C9/C11/C12; state that the fix fails the output check on two transfer loads. The instruction now says where the
+  workspace comes from and that `dev_run.sh` only measures the workspace it was built in (a copied workspace silently
+  measures the pristine one).
+
+Before that, the authors ran their own empty-directory test; the venvs were hash-identical to the authors' (123
+packages including `vllm-flash-attn`):
 
 - Calibration REF 1.4758 (pairs 1.4715-1.4816), A/A max deviation 0.21 %.
 - Human-fix scoring jobs **1.4871** (0.05 % above the band) and **1.4787** (inside), every check passing.

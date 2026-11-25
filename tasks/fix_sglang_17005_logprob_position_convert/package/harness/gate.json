@@ -1,0 +1,2 @@
+{"lp_tol": 0.001, "ref": 1.40, "band": 0.03, "aa_band": 0.03, "settings_ignore": ["port", "nccl_port"],
+ "note": "final 2026-11-25 09:42 UTC: ref = the two calibrations on main (GPU3 1.406, GPU2 empty-directory 1.400; pairs 1.379-1.421), rounded 1.40; band 3 %; aa_band 3 % (A/A max 1.75 % GPU3, 1.77 % GPU2); exact output gate; see CARD_sgl17005.md"}

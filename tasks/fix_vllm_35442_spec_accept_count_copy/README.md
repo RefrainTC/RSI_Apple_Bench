@@ -3,7 +3,8 @@
 With MTP speculative decoding on Qwen3.5-4B, the human fix makes batch-1 decoding **1.037x** faster on an RTX 4090
 (band ±1 %). The gain is small but steady: ten jobs of the fix by the authors fall between 1.036 and 1.042. Outputs are
 bit-identical to the unmodified engine's. An independent tester rebuilt the package and reproduced the number
-(PASS-with-fixes: it found two harness defects, both fixed and re-verified from an empty directory).
+(PASS-with-fixes: it found two harness defects, both fixed and re-verified from an empty directory). A second
+independent test on another server also passed, with scoring jobs of 1.0383, 1.0368 and 1.0376.
 
 Two things to know before using this task:
 - **The timed load is a weak check of the changed code.** Its random-id prompts accept 99 % of the MTP drafts; natural
@@ -55,6 +56,7 @@ Fix median rep 3.59-3.62 s, parent 3.73-3.76 s (one parent run at 3.86 s): about
 | GPU | REF | Band | A/A max deviation | Jobs |
 |---|---|---|---|---|
 | RTX 4090 (4-GPU server) | **1.037** (median of the 5 jobs that set it: 1.0364) | ±1 % (1.027-1.047), the floor; between-job SD 0.13 % | 0.14 % and 0.44 % (authors); 1.42 % and 0.30 % (independent tester) | 10 by the authors, 4 by the tester |
+| RTX 4090 (2-GPU server) | scoring jobs 1.0383, 1.0368, 1.0376; warm calibration 1.0368 (second tester) | inside | 0.26 % and 0.28 % | 5 (incl. one calibration failed by the cache-copy defect) |
 | RTX 5090 | not run | - | - | - |
 
 - Jobs that set REF: calibration 1.0378 (GPU1), scoring 1.0393 (GPU2) and 1.0364 (GPU3), empty-directory
@@ -66,7 +68,8 @@ Fix median rep 3.59-3.62 s, parent 3.73-3.76 s (one parent run at 3.86 s): about
 - Transfer loads (one pair each unless noted): natural-text essay, 1 request per rep (80 % of drafts accepted),
   **1.0385 and 1.0372**, outputs bit-identical; 4 requests per rep 1.048; 16 requests 1.052; the official load with
   vLLM's statistics on 1.0375 (768 of 775 drafts accepted). At 4 and 16 requests the outputs of both arms vary run to
-  run (batch shapes under async scheduling), so their digests are not compared.
+  run (batch shapes under async scheduling), so their digests are not compared. On the 2-GPU server the 4-request
+  transfer read only 1.007 in a single pair; the batch-1 task load reproduced there (see "Has someone else rebuilt it?").
 
 ## How are outputs checked?
 
@@ -157,7 +160,15 @@ digests identical), scoring 1.0377 `ties_ref`. No copy error appears in any log.
 `job.sh` now finds its own processes by tag and package root, `MANIFEST.sha256` covers `PROVENANCE.md`, and `RUN.md`
 explains the text-pass families and CPU sets.
 
-Second-host runs on the 2-GPU server exist but are not summarized yet, so they are not reported here.
+**Second server: PASS** (`docs/acceptance/batch5.md`). Another independent tester ran the package on the 2-GPU server
+(a second RTX 4090 server with 2 GPUs), in the version from before the two harness fixes.
+- Its first calibration (1.0379) hit the same `fail:correct` from the cache-copy defect (parent vs parent 18/24 in the
+  text pass). A warm calibration then read **1.0368** and passed.
+- Scoring jobs: **1.0383, 1.0368, 1.0376**, all `ties_ref` (band 1.027-1.047). A/A 0.26 % (fresh) and 0.28 % (warm).
+- Variants: `stale` `fail:correct` (0.87 nats), `short` `fail:counts,exact`, `spec2` `fail:correct,settings`, as on our
+  server. No deviation from `RUN.md`.
+- Transfers (single pairs): natural text 1.036; 4 requests per rep **1.007** (ours 1.048); 16 requests 1.045.
+- The tester judged it a PASS given the cache-copy fix, which the current package has.
 
 ## How to run it
 

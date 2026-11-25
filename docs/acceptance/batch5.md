@@ -176,3 +176,19 @@ Re-verified from new empty directories and fresh stages, with no cache from any 
 | vllm27418 | 1.679, A/A max 3.25% (gate limit 5%); text pass 24/24; re-read: fix maximum gap 0.125, no token above 0.5 | 1.686, `ties_ref`, all checks pass | **PASS** |
 
 With the smaller pool, `subpatch`'s re-read peaked at 21,374 MiB, 2.4 GB under the watchdog, with the verdict unchanged (`fail:tf`). No `cp` error appears in any job log of the re-verification.
+
+## Second host: vllm35442, vllm27418 and vllm30056 on the 2-GPU server
+
+A second independent tester rebuilt all three packages on the 2-GPU 4090 server (both GPUs), from its own copies. Those copies were the versions **before** the authors' cache-copy fix (all three manifests checked with 0 mismatches against that version). No deviations from `RUN.md` were needed.
+
+| Package | Fix scores vs band | A/A max deviation vs card | Variants | Verdict |
+|---|---|---|---|---|
+| vllm35442 | first calibration 1.0379 `fail:correct` (the cache-copy bug: parent against parent 18/24); warm calibration 1.0368; scoring 1.0383, 1.0368, 1.0376; band 1.027-1.047 | 0.26% fresh, 0.28% warm (card 0.14% / 0.44%) | `stale` `fail:correct` (0.87 nats); `short` `fail:counts,exact`; `spec2` `fail:correct,settings` | **PASS**, given the cache-copy fix |
+| vllm27418 | calibrations 1.6881 and 1.7191; 8 scoring jobs 1.660-1.730; band 1.639-1.741 | **9.45% and 6.74%** (card 0.7% / 3.6%) | `subpatch` `fail:tf` (0.75 nats, 2.5%, re-read peak 23.8 GB); `short`, `lowres`, `skipimg` fail; `cheappatch` accepted (`above_ref`) | **PASS**; A/A noisier than the card says |
+| vllm30056 | calibration 1.7878; 12 scoring jobs 1.778-1.806; band 1.736-1.844 | 2.04% (card 0.46% / 2.47%) | `noadvance` `fail:correct`; `short` `fail:counts,exact`; `noparser` `fail:exact,correct,settings` | **PASS** |
+
+- **The cache-copy bug, again.** "cannot create directory" appears in 14 job logs: the first calibration of each package and all 11 variant runs (a variant's cache directory never existed before its first run), so every variant ran on an empty cache. Only vllm35442's calibration failed from it. The current `harness/run.sh` creates the directory and stops on a failed copy, which fixes the variants too.
+- **vllm30056 flips:** none on this server in any arm (123 fix-against-parent timed reps, 15 parent-against-parent reps); correctness 24/24 in all 13 jobs.
+- **vllm27418 timing:** some runs had single slow pairs (1.46-1.58), absorbed by the median. Runs alone on the server and runs on both GPUs at once were tight (1.675-1.725). The cause of the slow pairs was not found.
+- **Transfer loads** (single pairs): vllm35442 `text` 1.036, `b4` 1.007 (card 1.048), `b16` 1.045; vllm27418 `i448` 1.297, `w1` 1.047 (card 0.85 / 0.92); vllm30056 `b8` 1.371, no structured output 0.999.
+- **Card defects** in the tester's copy of the vllm30056 card: three unfilled placeholders, and an A/A row giving a 2% limit where `gate.json` has 3%.
