@@ -53,7 +53,7 @@ A few things to keep in mind:
 
 ## How a task is laid out
 
-We follow Apple's task format and add what a reproducible measurement needs. [tasks/README.md](tasks/README.md) lists every task grouped by origin, with engine, model, minutes per scoring and GPU support:
+We follow Apple's directory layout and metadata style, and add what a reproducible measurement needs. The tasks cannot yet be run by Apple's Harbor harness: the `fix_*` tasks have no `tests/test.sh` entry point (see [What is not ready yet](#what-is-not-ready-yet)). [tasks/README.md](tasks/README.md) lists every task grouped by origin, with engine, model, minutes per scoring and GPU support:
 
 ```
 tasks/<task>/
@@ -65,13 +65,13 @@ tasks/<task>/
   package/           self-contained scoring package: pinned environments, scorer, loads, setup scripts; start at RUN.md
 ```
 
-**Keep the package away from an agent under test.** `package/` builds the reference fix as its own arm, and `package/variants/` holds broken versions of that fix. Give an agent `instruction.md` and a copy of the unmodified tree only, then score its tree with the package.
+**Keep the package away from an agent under test.** `package/` builds the reference fix as its own arm, and `package/variants/` holds broken versions of that fix. `package/RUN.md` also names the files the fix changes. Give an agent the symptom and rules from `instruction.md` and a copy of the unmodified tree only. Then score its tree yourself with the package. The "Measuring" section of `instruction.md` is written for whoever runs the scorer. Following it means building the package, so an agent that does that sees the answer.
 
-The packages are copies of the ones we verified. In the public copies, internal host names and home-directory paths are replaced with placeholders, and six Chinese READMEs are replaced with English translations. `MANIFEST.sha256` was regenerated after those changes. Nothing else differs.
+The packages are copies of the ones we verified. In the public copies, internal host names and home-directory paths are replaced with placeholders. One Chinese-language harness README is replaced with an English translation, and five more Chinese notes are left out for now. `MANIFEST.sha256` was regenerated after those changes. Nothing else differs.
 
 ## Running a task
 
-Each `package/RUN.md` gives the steps. In short:
+Each `package/RUN.md` gives the steps. For the 10 packages mined from history (and their shared harness), in short:
 
 1. Copy `site.env.example` to `site.env` and set your GPU, CPU set, port and a local staging directory.
 2. Run `export TZ=UTC`. Some setup scripts pass dates to `uv --exclude-newer`, which reads them in local time.
@@ -79,7 +79,23 @@ Each `package/RUN.md` gives the steps. In short:
 4. Calibrate: `bash harness/run.sh <label> cal`. This scores the reference fix and an A/A run.
 5. Score a candidate: `bash harness/run.sh <label> score <name>`. One scoring job takes 5–27 minutes.
 
-You need Linux, an NVIDIA driver with CUDA 12.4 or newer (the 5090 needs a newer one), `uv`, and 25–60 GB of local disk per task. The GPU must be otherwise idle: the harness refuses to run if another process is using it.
+The 7 ISO-Bench packages are older and use their own job scripts, which their `RUN.md` describes. The four tasks without a package use Apple's or Φ-Bench's verifier; see each task's README.
+
+You need Linux, an NVIDIA GPU with a driver for CUDA 12.4 or newer (the 5090 needs a newer one), `uv`, and 25–65 GB of local disk per task. The GPU must be otherwise idle: the harness refuses to run if another process is using it.
+
+## What is not ready yet
+
+The repo reproduces each reference fix and its numbers. Using it to score agents on your own GPUs still needs work:
+
+- **Reference scores are per GPU type.** `package/harness/gate.json` holds the RTX 4090 reference speedup, and the scorer does not check which GPU it runs on. On any other GPU, rerun the calibration and set REF and the band from your own jobs before trusting verdicts or rewards. That takes about 2–3 GPU-hours per `fix_*` task, and 2–12 GPU-hours for the other four.
+- **NVIDIA only.** Every package pins CUDA builds of PyTorch, vLLM and SGLang and uses `nvidia-smi`. AMD GPUs (ROCm) would need the engines re-ported, which changes the task.
+- **No agent view yet.** There is no bundle that contains only the unmodified tree and the benchmark. You have to stage one yourself, or run the measurements on the agent's behalf.
+- **Candidate trees are hard-linked to the baseline.** The documented candidate venv is a `cp -al` copy of the parent. A tool that edits a file in place changes the baseline too, and the harness does not re-hash the parent before scoring. Replace files rather than editing them, or copy the engine package for real.
+- **The scorer trusts the candidate's process.** Timing and the settings readback run inside the candidate's Python process. A candidate that tampers with them is not caught. Add an outside check before using scores as agent rewards.
+- **Some tasks have no candidate input.**
+  - The four tasks without a package score only the reference fix and our built-in variants. A staging step for an agent's tree is not shipped yet.
+  - The #6994 and #14857 packages have no candidate slot. Their `instruction.md` describes an untested workaround.
+- **No Harbor entry point.** No `fix_*` task has an `environment/Dockerfile`, `tests/test.sh` or `solution/solve.sh`.
 
 ## What we learned
 
