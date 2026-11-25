@@ -53,7 +53,7 @@ A few things to keep in mind:
 
 ## How a task is laid out
 
-We follow Apple's task format and add what a reproducible measurement needs:
+We follow Apple's task format and add what a reproducible measurement needs. [tasks/README.md](tasks/README.md) lists every task grouped by origin, with engine, model, minutes per scoring and GPU support:
 
 ```
 tasks/<task>/
@@ -97,8 +97,11 @@ The details are in [docs/findings.md](docs/findings.md).
 
 ## How we chose tasks
 
+An index of all docs is in [docs/README.md](docs/README.md).
+
 | Document | What it covers |
 |---|---|
+| [docs/selection/](docs/selection/) | How many candidates survived from each source, and what decided it |
 | [docs/selection/apple-37-tasks.md](docs/selection/apple-37-tasks.md) | All 37 Apple tasks: which run on our GPUs, and why the rest don't |
 | [docs/selection/other-benchmarks.md](docs/selection/other-benchmarks.md) | Other benchmarks we screened, and the Φ-Bench port |
 | [docs/selection/iso-bench-screen.md](docs/selection/iso-bench-screen.md) | 29 ISO-Bench fixes measured on GPU, and what predicted success |
