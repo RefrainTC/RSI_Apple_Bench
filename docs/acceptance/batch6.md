@@ -45,3 +45,14 @@ Both packages' manifests checked clean, both builds reproduced the authors' envi
 - **Transfer loads:** `n4k` 1.011 (card 1.008); `r64` 1.067 (card 1.048).
 - **Variants:** `prefix` 1.070, `ties_ref` (accepted by design, reward 0.87); `multistep` 1.091 `fail:settings`; `short` 1.202 `fail:counts,exact,correct`. All as the card says.
 - **Optional:** the card could say that REF may read about 1.5% high on another host.
+
+## Fixed after acceptance (2026-11-25)
+
+**vllm30056 (N1).** Both requested fixes are in the package; the second calibration's pass and all scoring numbers above are unchanged.
+- **Calibration rule.** In calibration, the scorer now takes, for each timed rep, the digest shared by a strict majority of the 15 parent runs (5 A/B and 10 A/A) as the reference. Every fix rep must equal it: one differing fix rep gives `rerun:exact` (rerun once, as in scoring), two or more give `fail:exact`. A parent rep that differs from the majority is reported as a parent flip and does not fail the calibration; more than 2 parent flips, or a rep without a strict majority, does. Scoring, quick and transfer modes are unchanged. At the measured flip rates (0.5-0.8 % of reps), about 8-11 % of calibrations need one rerun and about 0.2-0.6 % fail. Under the old rule about 15-20 % failed: the 40 % figure above counts flips anywhere, including A/A runs, which were never checked.
+- **`RUN.md`:** time estimate corrected to about 24 + 9 min; the rule is described in its section 7 and on the card.
+- **Validation (offline only).** Old and new scorer were replayed on the recorded digests of 22 jobs: this test's 9 and the authors' 13. The failing calibration now reads `ties_ref` 1.7899 with one parent flip reported. The other four calibrations keep their verdicts. Every scoring, quick and transfer job gets a byte-identical verdict file. Synthetic cases behave as intended: a lone fix flip gives `rerun:exact`; two fix flips, or a fix that differs from the parent in every run, give `fail:exact`; two parent flips on the same rep pass; three fail.
+- **Manifest:** `87699e102f0d...` became `c7dd3b96f44a...` (changed: `harness/check.py`, `RUN.md`, `PROVENANCE.md`).
+- **Pending:** a GPU calibration under the new rule.
+
+**sgl20503 (N2):** no change.

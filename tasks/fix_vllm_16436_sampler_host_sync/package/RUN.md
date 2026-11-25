@@ -64,6 +64,12 @@ bash scripts/stage_tmp.sh py venv:$ISO_ROOT/venvs/16436_parent venv:$ISO_ROOT/ve
 bash harness/build_workspace.sh tasks/iso16436
 ```
 
+The workspace is `tasks/iso16436/workspace`: `repo/vllm/` (the parent's Python source), `WORKLOAD.md`, `dev_run.sh` and
+`instruction.md`. Its `dev_run.sh` measures the directory it sits in, so an agent may work in a copy of the workspace
+(before 2026-11-25 it always measured `tasks/iso16436/workspace`). `instruction.md` is the public task's `instruction.md`
+when this package sits as `package/` in a public task directory (next to that task's `task.toml`); otherwise it is
+`tasks/iso16436/instruction.md`, the package's own task text. The script prints which one it used.
+
 ## 6. Calibrate: REF, A/A, references, manifests (one GPU, ~75 min)
 
 ```bash

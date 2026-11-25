@@ -9,7 +9,10 @@ parent's bit for bit (checked in every calibration and scoring run, see the card
   counts    output token counts per rep equal the paired parent's (timed and transfer pairs)
   settings  the engine's resolved configuration (vllm_config incl. structured_outputs_config) equals the paired parent's (keys
             in gate.json "settings_ignore" excepted)
-  exact     every timed rep's digest (sha256 of the output ids) equals the paired parent's
+  exact     every timed rep's digest (sha256 of the output ids) equals the paired parent's. In calibration (mode cal) a
+            fix rep is compared instead with the majority parent digest of that rep over all 15 timed parent runs of
+            the job (5 AB + 10 A/A); a parent rep that differs from it is a parent flip, counted and printed but not
+            gated, up to cal_parent_flips_max flipped parent reps (gate.json; 2 if absent); see the rerun rule below
   correct   correctness pass (24 questions in chat format with thinking on and a JSON schema, one per call, 384 tokens
             with the produced token's logprob; the model ends its reasoning and the grammar takes over): ids
             identical to the parent's pass of the same job (or to the reference pass harness/ref_correct.json), every
@@ -86,7 +89,45 @@ for ii, c, p in allp:
     sdiff |= set(settings_diff(c, p))
 if cnt_bad: fails.append("counts"); info.append(f"output token counts differ from the paired parent in pairs {cnt_bad}")
 info.append(f"timed reps with identical digests (cand vs paired parent): {agr}")
-if any(x is None or not all(x) for _, x in agr): fails.append("exact")
+if mode != "cal":
+    if any(x is None or not all(x) for _, x in agr): fails.append("exact")
+else:
+    # Calibration: the engine flips one timed rep in about 1 run in 50, in either arm (CARD_vllm30056.md, "The rare
+    # digest flip"), and a calibration has 20 timed runs. Comparing each fix run with its paired parent cannot tell a
+    # parent flip from a fix flip, so a lone parent flip used to fail the whole calibration. Here the reference of each
+    # rep is the digest held by a strict majority of the job's timed parent runs (AB and A/A). Fix reps are judged
+    # against it (a lone fix flip then gets the same one-rerun rule as scoring, below); parent reps that differ from it
+    # are counted as parent flips and only reported, unless there are more than cal_parent_flips_max of them, which
+    # would mean this engine/GPU flips far more often than the card measured (the one-rerun rule assumes rare flips).
+    par = {}
+    for d in sorted(glob.glob(f"{R}/a[ab][0-9][0-9]_[12]_parent")):
+        l = lat(d)
+        if l: par[os.path.basename(d)] = l["out_sha_per_rep"]
+    nrep = max([len(v) for v in par.values()] or [0])
+    ref_sha = []; no_major = []
+    for r in range(nrep):
+        cnt = {}
+        for v in par.values():
+            if len(v) > r: cnt[v[r]] = cnt.get(v[r], 0) + 1
+        sha, n = max(cnt.items(), key=lambda kv: kv[1])
+        ref_sha.append(sha)
+        if 2 * n <= sum(cnt.values()): no_major.append(r)
+    pflips = [(b, r) for b, v in sorted(par.items()) for r, x in enumerate(v) if r < nrep and x != ref_sha[r]]
+    pmax = G.get("cal_parent_flips_max", 2)
+    cal_fix = []
+    for ii, c, _ in P:
+        lc = lat(c)
+        v = lc["out_sha_per_rep"] if lc else None
+        cal_fix.append((ii, [int(x == y) for x, y in zip(v, ref_sha)] if v is not None and len(v) == nrep else None))
+    info.append(f"calibration exact rule: reference = majority parent digest per rep over {len(par)} timed parent runs; "
+                f"fix reps identical to it: {cal_fix}")
+    info.append(f"calibration parent flips (parent rep differing from the majority; reported, not gated up to {pmax}): "
+                f"{len(pflips)} {pflips}")
+    if no_major: info.append(f"calibration: no strict-majority parent digest for reps {no_major}: exact fails")
+    if len(pflips) > pmax: info.append(f"calibration: {len(pflips)} parent flips > {pmax}: the parent is not repeatable "
+                                       f"enough for the exact gate on this host/GPU; exact fails")
+    if (not par or no_major or len(pflips) > pmax or not cal_fix
+            or any(x is None or not all(x) for _, x in cal_fix)): fails.append("exact")
 if aa_agree: info.append(f"identical digests parent vs parent (A/A pairs): {aa_agree}")
 # --- correctness pass ---
 corc = f"{R}/cor_3_fix" if mode == "cal" else f"{R}/cor_2_cand"
@@ -138,11 +179,18 @@ else:
 # --- one rerun after a single-rep digest flip (CARD_vllm30056.md, "The rare digest flip") ---
 # Allowed only when counts, settings and the correctness pass all pass and exactly one rep of one run differs from its
 # paired parent. The job is then repeated once under a new label; a failure of that rerun is final.
+# Calibration: the same rule, with "one rep of one fix run differs from the majority parent digest" (parent flips are
+# counted above), provided the reference itself is sound (a strict majority on every rep, parent flips within the cap).
 nbad = sum(x.count(0) for _, x in agr if x is not None)
 if mode in ("score", "quick") and fails == ["exact"] and nbad == 1 and all(x is not None for _, x in agr):
     verdict, reward = "rerun:exact", None
     info.append("exact: only one rep of one run differs (the known rare flip); rerun this job ONCE under a new label, "
                 "a second failure is final")
+if (mode == "cal" and fails == ["exact"] and par and not no_major and len(pflips) <= pmax and cal_fix
+        and all(x is not None for _, x in cal_fix) and sum(x.count(0) for _, x in cal_fix) == 1):
+    verdict, reward = "rerun:exact", None
+    info.append("exact: only one rep of one fix run differs from the majority parent digest (the known rare flip); rerun "
+                "this calibration ONCE under a new label, a second failure is final")
 gpu_s = sum(wall(d)[0] for d in glob.glob(f"{R}/*/") if "failed" not in d)
 peak = max([wall(d)[1] for d in glob.glob(f"{R}/*/")] or [0])
 fixm = sorted(round(lat(c)["metric_s"], 4) for _, c, _ in P if lat(c)); parm = sorted(round(lat(p)["metric_s"], 4) for _, _, p in P if lat(p))

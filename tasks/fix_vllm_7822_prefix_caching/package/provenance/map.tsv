@@ -48,6 +48,7 @@ scripts/stage_tmp.sh	scripts/stage_tmp.sh
 scripts/p2_job.sh	scripts/p2_job.sh
 scripts/p2_cpus.sh	scripts/p2_cpus.sh
 scripts/jobvar.py	scripts/jobvar.py
+scripts/make_canaries_r4f.sh	scripts/make_canaries_r4f.sh
 t5scripts/setup.sh	t5scripts/setup.sh
 t5scripts/setup_fix.sh	t5scripts/setup_fix.sh
 t5scripts/fetch.py	t5scripts/fetch.py

@@ -118,7 +118,12 @@ Yes. An independent tester copied the package alone into an empty directory on t
   0.024); the human fix placed in `repo/vllm/` scored 1.0915 (`ties_ref`).
 - Notes for both history packages from that test: the shared harness version has no STOP file; two package copies
   using the same job labels on one machine could kill each other's runs; `score.sh` leaves compile-cache roots under the
-  staging directory. The instruction now says where the workspace comes from and to work in place.
+  staging directory. The instruction now says where the workspace comes from.
+- The tester also found that the workspace's `dev_run.sh` always measured the workspace built inside the package, so
+  run from a copy it timed the untouched tree (shown on #7822; this package builds it the same way). **Fixed
+  2026-11-25:** `dev_run.sh` now measures the workspace it sits in, and a workspace built inside this task directory
+  carries this task's `instruction.md`. Checked statically (generator dry run in scratch copies); a GPU re-run of the
+  agent path is pending. Official scoring was never affected, since `score.sh` is given the workspace explicitly.
 
 Before that, the authors ran their own empty-directory test. The first copy measured the right speeds (calibration REF 1.0871; jobs 1.0910 and 1.0857) but every
 pair was flagged `venv_changed`: fresh venvs lacked the `.pyc` files the authors' venvs held, so each `vllm serve` run

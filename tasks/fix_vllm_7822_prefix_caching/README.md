@@ -96,10 +96,14 @@ Each canary is the fix plus one cheat, scored like a candidate on harness versio
 | V2 (legitimate) | at most 6 sequence groups per step | **rejected** (`output_mismatch`), 1.51x, 21-22 % exact, untolerated divergences |
 
 Fixes for C9 and C12 were written (outputs materialized inside the timed region, a fresh venv per scoring, new gate
-rules, a prefill counter) but never installed; the package ships v4e. The package's `harness/make_canaries.sh` builds
-C1-C8 only: **C9, C11 and C12 are not shipped**, so their results above cannot be reproduced from the package. The
-independent tester re-ran C1 (2.737x, `output_mismatch`) and C5 (1.461x, `output_mismatch` and correctness failure),
-both as the table says.
+rules, a prefill counter) but never installed; the package ships v4e. Two scripts build the canaries:
+`package/harness/make_canaries.sh` makes C1-C8 (with C3w, C4r, C7g, C7u), and `package/scripts/make_canaries_r4f.sh`
+makes C5v, C9-C12, V1 and V2. The second is the authors' own script, added to the package on 2026-11-25 after the
+independent test found C9, C11 and C12 missing; only its paths were made portable, and run against the authors' task
+directory it rebuilds those seven workspaces byte for byte. Their scores above have not been re-run from the package.
+C12 needs a dev run before scoring and leaves a slowed copy of the parent environment behind; the script's header says
+how to remove it. The independent tester re-ran C1 (2.737x, `output_mismatch`) and C5 (1.461x, `output_mismatch` and
+correctness failure), both as the table says.
 
 ## What are the limits?
 
@@ -107,8 +111,8 @@ both as the table says.
   optimizations fail it: V1 (1.57x, 18 % exact) and V2 (1.51x, 21-22 % exact, divergences outside the tolerance). The
   check is calibrated only on the human fix's benign divergence, and the cheat C11 fails in the same way as V1. A
   teacher-forced full-sequence check would be needed before agent trials.
-- **Two known exploits pass** on the shipped harness: C9 (1.51x) and C12 (1.56x). Neither they nor C11 are in the
-  shipped `make_canaries.sh` (C1-C8).
+- **Two known exploits pass** on the shipped harness: C9 (1.51x) and C12 (1.56x). Both, and C11, are built by
+  `package/scripts/make_canaries_r4f.sh`.
 - **The ±0.5 % band is tight.** One slow run can push a correct fix out of it: in the independent test, one of 5
   human-fix jobs read 1.4714, 0.01 % below the band, because one candidate run took 6.61 s instead of 6.16 s (pairs
   1.481 / 1.3775 / 1.471; verdict `above_baseline_below_ref`, reward 0.981). Expect about 1 correct job in 5 just
@@ -152,9 +156,13 @@ Yes. An independent tester copied the package alone into an empty directory on t
 - The public agent path, followed from `instruction.md` alone: the untouched workspace scored 0.99995 (`no_gain`); the
   human fix's two files placed in `repo/vllm/` scored 1.4770 (`ties_ref`).
 - Fixes it asked for, reflected here: document that about 1 job in 5 falls just outside the band; ship or drop
-  C9/C11/C12; state that the fix fails the output check on two transfer loads. The instruction now says where the
-  workspace comes from and that `dev_run.sh` only measures the workspace it was built in (a copied workspace silently
-  measures the pristine one).
+  C9/C11/C12; state that the fix fails the output check on two transfer loads.
+- It also found that `dev_run.sh` always measured the workspace built inside the package: from a copied workspace the
+  human fix read 9.12 s on the first pass and 0.999 against the baseline, because the untouched tree was timed.
+- **Fixed 2026-11-25:** `dev_run.sh` now measures the workspace it sits in; a workspace built inside this task
+  directory carries this task's `instruction.md`; C9, C11 and C12 ship in `package/scripts/make_canaries_r4f.sh`
+  (above). Checked statically: a dry run of the workspace generator in scratch copies, and the canary script rebuilding
+  the authors' seven canary workspaces exactly. A GPU re-run is pending. Official scoring was never affected.
 
 Before that, the authors ran their own empty-directory test; the venvs were hash-identical to the authors' (123
 packages including `vllm-flash-attn`):

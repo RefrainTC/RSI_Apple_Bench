@@ -52,7 +52,7 @@ bash setup/get_model.sh      # Qwen/Qwen3-0.6B @ c1899de2...; ends with GET_MODE
 bash setup/stage.sh          # ends with STAGE_OK 30056
 ```
 
-## 5. Calibration, then a scoring job of the human fix (one GPU; ~40 + ~18 min)
+## 5. Calibration, then a scoring job of the human fix (one GPU; ~24 + ~9 min)
 
 ```
 bash harness/run.sh cal_g0 cal          # 25 runs
@@ -68,6 +68,8 @@ One of them only: `ONLY=b8 bash harness/run.sh trb8_g0 transfer`.
 Verdict `rerun:exact`: counts, settings and the correctness pass all passed, but exactly one timed rep of one run
 differs from its paired parent (a rare flip of this load, measured in the card). Run the same job once more under a new
 label (e.g. `s1b_g0`); its verdict is final, a second `fail:exact` included.
+A calibration judges `exact` differently (section 7): a lone flipped parent rep does not fail it, a lone flipped fix
+rep gives `rerun:exact` as above (rerun the calibration once, e.g. `cal2_g0`).
 To re-derive a verdict with other thresholds: edit `harness/gate.json`, then `python3 -I harness/check.py $ISO_ROOT <label>`.
 
 
@@ -93,6 +95,21 @@ passes, one timed pair.
 | Calibration A/A | see card | within the card's A/A spread |
 | Checks on the fix | counts, settings, exact timed outputs, correctness pass (bit-exact): all pass | no `fail:` |
 | Broken variants | every one `fail:<checks>` as listed in the card | same checks fail |
+
+**How a calibration judges `exact`** (`harness/check.py`, since 2026-11-25 after acc7). The engine flips one timed rep
+in about 1 run in 50, in either arm (card, "The rare digest flip"). A calibration has 20 timed runs, so comparing each
+fix run only with its paired parent failed a fresh calibration whenever any of its 10 AB runs flipped, a parent
+included (~15-20 % of calibrations at the measured rates). Instead:
+- for each rep, the reference digest is the one held by a strict majority of the job's 15 timed parent runs (5 AB
+  parents + 10 A/A parents);
+- every fix rep must equal that reference. Exactly one differing fix rep (counts, settings and the correctness pass
+  all passing) gives `rerun:exact`, the scoring rule; two or more give `fail:exact`;
+- a parent rep that differs from the reference is a *parent flip*: printed and counted (`calibration parent flips:`),
+  not gated. More than `cal_parent_flips_max` of them (`harness/gate.json`; 2 when absent), or a rep without a strict
+  majority, fails `exact`: the parent then repeats too poorly for the exact gate on that GPU (at the measured rates
+  ~0.2-0.6 % of calibrations; a lone fix flip, i.e. `rerun:exact`, ~8-11 %).
+The per-pair view (`timed reps with identical digests (cand vs paired parent)`) is still printed. Scoring and quick
+jobs are unchanged: they compare with the paired parent and apply the one-rerun rule.
 
 ## Files
 

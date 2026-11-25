@@ -59,3 +59,20 @@ Job times, warm-ups and pair counts matched the instruction. But the agent-facin
 3. The workspace carries its own `instruction.md`, an older text with a different title and no Scoring, Measuring or Rules sections.
 4. There are two git repositories: the engine tree (committed at the pristine state) and the workspace root, which ignores the engine tree. `git diff` from the root shows nothing.
 5. The instruction says "1.0× scores nothing", but the reward is continuous (the #16436 A/A job got reward 0.024 with verdict `no_gain`).
+
+## Fixed after acceptance (2026-11-25)
+
+No scoring code changed in either package. Neither fix has been re-run on a GPU yet.
+
+**iso7822.**
+- **`dev_run.sh` (problem 2 above).** The workspace generator (`harness/build_workspace.sh`) now writes a `dev_run.sh` that passes its own directory as the workspace, so a copy of the workspace measures itself and keeps its own `dev_runs/`.
+- **The workspace's `instruction.md` (problem 3).** When the package sits as `package/` inside the public task directory, the workspace now gets the task's public `instruction.md`. A package copied elsewhere still gets its own shorter task text. The public instruction no longer asks the agent to work in place.
+- **Canaries C9, C11 and C12.** These are now shipped as `scripts/make_canaries_r4f.sh`, the authors' own script that made C5v, C9-C12, V1 and V2. Only its paths were made portable. Run against the authors' task directory, it rebuilt all seven canary workspaces byte for byte. Their scores have not been re-run from the package.
+- **Validation (static).** We checked shell syntax and did a dry run of the generator in scratch copies (public layout and stand-alone, with a fake engine). The generated `dev_run.sh` passed the copy's own directory when started from another directory, from inside the copy and through a symlink. The pristine checksum list verified.
+- **Manifest:** `815682eda8ab...` became `95edddeea150...`.
+
+**iso16436.**
+- The same `dev_run.sh` and `instruction.md` change, with the same validation.
+- **Manifest:** `dcb1427b52c1...` became `761c791530c0...`.
+
+Not changed: the ±0.5 % band of #7822, the output check on the transfer loads, and the four problems common to both packages listed above.

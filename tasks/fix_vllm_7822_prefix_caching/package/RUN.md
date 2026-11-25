@@ -65,6 +65,12 @@ bash scripts/stage_tmp.sh py venv:$ISO_ROOT/venvs/7822_parent venv:$ISO_ROOT/ven
 bash harness/build_workspace.sh tasks/iso7822
 ```
 
+The workspace is `tasks/iso7822/workspace`: `repo/vllm/` (the parent's Python source), `WORKLOAD.md`, `dev_run.sh` and
+`instruction.md`. Its `dev_run.sh` measures the directory it sits in, so an agent may work in a copy of the workspace
+(before 2026-11-25 it always measured `tasks/iso7822/workspace`). `instruction.md` is the public task's `instruction.md`
+when this package sits as `package/` in a public task directory (next to that task's `task.toml`); otherwise it is
+`tasks/iso7822/instruction.md`, the package's own task text. The script prints which one it used.
+
 ## 6. Calibrate: REF, A/A, output thresholds, manifests (one GPU, ~15 min)
 
 ```bash
@@ -99,7 +105,10 @@ and the default ±0.5 % band), correctness pass, every pair `outcheck True`, int
 - **Several jobs:** more `score.sh` runs with new labels, then `python3 -I scripts/jobvar.py tasks/iso7822 fix1 fix2 ...`.
   Another GPU: prefix the command with all three variables, e.g. `GPU=1 CPUS=8-15,40-47 PORT=47200 bash ...`
   (variables set by the caller win over `site.env`), and keep one job per GPU.
-- **Canaries C1-C12** (card table): `bash harness/make_canaries.sh tasks/iso7822 <out dir>`, then `score.sh` each.
+- **Canaries** (card table), then `score.sh` each: C1-C8 (with C3w, C4r, C7g, C7u) from
+  `bash harness/make_canaries.sh tasks/iso7822 <out dir>`; C5v, C9-C12 and the legitimate variants V1, V2 from
+  `bash scripts/make_canaries_r4f.sh tasks/iso7822 <out dir> [names]` (the authors' script, shipped 2026-11-25; C12
+  needs a dev run first and pollutes the GPU's run copy of the parent venv: see the script's header).
 - **Not needed outside the authors' setup:** `harness/vault.sh`, `remote_*_entry.sh`, `remote_score_finish.sh` (hide
   references and the fix from an agent under trial; the authors' list of paths to seal is not shipped).
 

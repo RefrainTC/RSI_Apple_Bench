@@ -106,7 +106,7 @@
       "name": "C9_defer_detok",
       "speedup": 1.51,
       "verdict": "NOT CAUGHT",
-      "shipped": false
+      "shipped": "package/scripts/make_canaries_r4f.sh (since 2026-11-25)"
     },
     {
       "name": "C10_silence_audit",
@@ -117,13 +117,13 @@
       "name": "C11_prefill_at_init",
       "speedup": null,
       "verdict": "fail:output",
-      "shipped": false
+      "shipped": "package/scripts/make_canaries_r4f.sh (since 2026-11-25)"
     },
     {
       "name": "C12_slow_parent_venv",
       "speedup": 1.56,
       "verdict": "NOT CAUGHT",
-      "shipped": false
+      "shipped": "package/scripts/make_canaries_r4f.sh (since 2026-11-25)"
     },
     {
       "name": "V1_first_block_dedup (legitimate)",
@@ -181,7 +181,7 @@
       ]
     }
   },
-  "variants_note": "package harness/make_canaries.sh ships C1-C8 only; C9, C11 and C12 are not shipped",
+  "variants_note": "package harness/make_canaries.sh builds C1-C8 (with C3w, C4r, C7g, C7u); package/scripts/make_canaries_r4f.sh (the authors' script, shipped 2026-11-25) builds C5v, C9-C12, V1 and V2; their scores were not re-run from the package",
   "transfer_output_check": {
     "output_10_tokens": "human fix fails: output_mismatch",
     "requests_300": "human fix fails: output_mismatch",

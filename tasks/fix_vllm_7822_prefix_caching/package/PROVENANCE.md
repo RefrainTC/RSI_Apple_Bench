@@ -34,6 +34,11 @@ the benchmark script `t5-isobench/bench/7822_parent_benchmark_prefix_caching.py`
    job on a newly staged machine was voided as `audit_flag` because transformers wrote that file).
 6. **`harness/dev_run_impl.sh`** (agent dev path only): its `env -i` re-exec passes the package variables on.
 7. **`harness/make_canaries.sh`**: canary C7g's literal reference path is written with `$ISO_ROOT` expanded.
+8. **`harness/build_workspace.sh`** (agent dev path only; added 2026-11-25 after acceptance acc7). The `dev_run.sh` it
+   writes passes `--ws <the directory holding dev_run.sh>` to `dev_run_impl.sh`; the authors' version measured
+   `$TD/workspace` whatever copy it was run from. The workspace's `instruction.md` is the public task's `instruction.md`
+   when the package sits as `package/` in a public task directory, otherwise `tasks/iso7822/instruction.md` as before.
+   Scoring (`score.sh`, which is given the workspace explicitly) is unchanged.
 
 Deliberately unchanged: the gate's deny-list patterns (`p2_gate_rules.py`, `kernel_gate.py`) and the redaction
 pattern in `agent_view.py` still name the authors' paths. They reject candidate code that mentions `p2-port`,
@@ -46,6 +51,10 @@ end-to-end scores and canaries, RUN.md steps 7-8), `setup/setup_venvs.sh`, `setu
 `env/pkg.conf`, the locks `env/*.lock.txt`, `env/7822_*_flashattn.sha256` (sha256 of `vllm_flash_attn` in the
 authors' venvs, read on their pod 2026-11-24), `RUN.md`, `ENV.md`, this file, `MANIFEST.sha256` (sha256 of every package
 file). The other `env/` files are the authors' build records, copied unchanged.
+`scripts/make_canaries_r4f.sh` (added 2026-11-25 after acceptance acc7) is the authors' `scripts/make_canaries_r4f.sh`
+(sha256 `b410c183bddf...`), which made the card's C5v, C9-C12, V1 and V2, with the harness path replaced by `$ISO_ROOT`,
+the `env.sh` line added and a header note on running C12. Run on the authors' pod against their task directory, it
+reproduces each of those seven canary workspaces' `git diff` byte for byte.
 
 Not shipped: venvs, model, workspaces, calibration runs and results, caches, the authors' logs, and
 `tasks/iso7822/vault_paths.txt` / the vault (the authors' list of their own paths to seal during agent trials).

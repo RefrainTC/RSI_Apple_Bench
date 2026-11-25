@@ -42,7 +42,7 @@ Containers on the server get no GPU, so instead of containers this harness uses 
 | `compare.py <ref> <cand> <min exact fraction> <tie threshold nats>` | Correctness comparison, rules in "Correctness" below |
 | `outcheck.py` | `check(cand, base, taskdir)`: checks the outputs of the scored run itself, see "Anti-cheating checks" |
 | `settings.py` | `settings(out)`: reads back from a run the engine settings that actually took effect |
-| `instruction.md`, `WORKLOAD.md` | The task statement shown to the agent, copied into the workspace |
+| `instruction.md`, `WORKLOAD.md` | The task statement shown to the agent, copied into the workspace (in the public repository the workspace gets the task's public `instruction.md` instead, see "Workflow" step 1) |
 
 Existing tasks:
 - `iso16436`: V1 sampler without a sync, Qwen2.5-1.5B, metric median TPOT.
@@ -173,7 +173,7 @@ entry points:
 - The GPU is chosen by task.env (#7822 is GPU1, #16436 is GPU0), or by `tasks/<t>/trial_gpu`. During a trial that
   GPU's queue must be stopped; dev runs and the queue share `locks/gpu<N>.lock`.
 - The agent-visible instructions (`instruction.md`, `WORKLOAD.md`) are under `tasks/<t>/`; the local workspace copies
-  these two files directly.
+  these two files directly (for `instruction.md`, unless the public one is found; see "Workflow" step 1).
 - Self-test: `scripts/remote_entry_selftest.sh <task>` (from v4 it also tests C7g / C7 / C8, see the next section). It
   covers: the human fix, the human fix with a modified `dev_run.sh` (which must be ignored), the atexit cheat (which
   the gate must reject), and three bad snapshots (symlink, `..`, absolute path, which must be rejected before any
@@ -293,7 +293,10 @@ maintenance.
 
 ## Workflow
 1. `bash harness/build_workspace.sh tasks/<t> --force`: builds the workspace and pristine. This wipes the agent's
-   changes; use with care.
+   changes; use with care. The workspace's `dev_run.sh` measures the directory it sits in, so a copy of the workspace
+   can be used as well (changed 2026-11-25; before, it always measured `tasks/<t>/workspace`). Its `instruction.md` is
+   the public task's `instruction.md` when the package sits as `package/` in a public task directory (next to that
+   task's `task.toml`), otherwise `tasks/<t>/instruction.md`; the script prints which one it used.
 2. Smoke test (for #7822 `scripts/smoke7822.sh`): parent twice, fix once, parent with logprobs once, correctness once;
    checks the audit records, the venv guard, the witness residual, whether the tokens are deterministic and whether
    the settings agree. If it fails, do not calibrate.

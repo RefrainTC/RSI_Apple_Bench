@@ -4,7 +4,7 @@
   "reference_speedup": 1.79,
   "band_pct": 3.0,
   "aa_band_pct": 3.0,
-  "gate": "exact: counts, settings incl. structured_outputs_config (num_gpu_blocks ignored), timed-rep digests, 24-question thinking + JSON pass; one rerun in scoring mode when exactly one rep of one run differs",
+  "gate": "exact: counts, settings incl. structured_outputs_config (num_gpu_blocks ignored), timed-rep digests, 24-question thinking + JSON pass; one rerun when exactly one rep of one run differs; in calibration fix reps are judged against the majority parent digest per rep, up to 2 parent flips reported but not gated (since 2026-11-25)",
   "gpus": {
     "rtx4090": {
       "jobs": [
@@ -68,7 +68,7 @@
       1.7962
     ],
     "median": 1.79,
-    "speedups_note": "calibration (fail:exact: one parent run flipped one timed rep; calibration has no rerun rule), second calibration (ties_ref), scoring GPU0 x2, scoring GPU1 with empty caches; all scoring jobs ties_ref",
+    "speedups_note": "calibration (fail:exact: one parent run flipped one timed rep; calibration then had no rerun rule; ties_ref under the 2026-11-25 rule in an offline replay), second calibration (ties_ref), scoring GPU0 x2, scoring GPU1 with empty caches; all scoring jobs ties_ref",
     "aa_max_pct": [
       2.22,
       1.0
@@ -78,13 +78,14 @@
       "fix_runs": "0 of 19 (0 of 57 reps)",
       "warmups": "0 of 13"
     },
-    "fresh_calibration_flip_chance": "about 4 in 10 (25 runs at ~1 flip per 50 runs)",
+    "fresh_calibration_outcome": "old rule: about 15-20 % of fresh calibrations failed on a flip in an A/B pair; new rule (2026-11-25): about 8-11 % need one rerun, about 0.2-0.6 % fail, at 0.5-0.8 % flipped reps",
     "variants_same_verdict": "3 of 3",
     "transfers": {
       "b8": 1.356,
       "nogrammar": 0.999
     },
-    "suggested_fixes": "calibration: judge exact on fix-vs-parent only or allow one rerun; RUN.md section 5 times to ~24 + 9 min (not yet applied)",
+    "suggested_fixes": "calibration: judge exact on fix-vs-parent only or allow one rerun; RUN.md section 5 times to ~24 + 9 min",
+    "fixes_applied": "2026-11-25: calibration majority-parent rule in check.py and RUN.md times; validated by an offline replay of 22 recorded jobs (failing calibration now ties_ref, all scoring/quick/transfer verdicts byte-identical) and synthetic cases; GPU re-run pending; package manifest c7dd3b96f44a",
     "second_host": {
       "verdict": "PASS",
       "host": "2-GPU server",

@@ -2,7 +2,8 @@
 
 On 64 structured-output requests that are still reasoning, the human fix makes generation **1.79x** faster on an
 RTX 4090 (band ±3 %). Outputs are bit-identical to the unmodified engine's. An independent tester rebuilt the package
-and got 1.790 (median of 5 jobs): PASS-with-fixes, because its first fresh calibration failed on one engine-level flip.
+and got 1.790 (median of 5 jobs): PASS-with-fixes, because its first fresh calibration failed on one engine-level flip
+(the calibration rule has since been fixed, see below).
 A second tester on another server: PASS, no flips.
 
 Two things to know before using this task:
@@ -10,8 +11,9 @@ Two things to know before using this task:
   runs for every request on every step. Real reasoning requests are in that state only while they think.
 - **The timed load is not perfectly repeatable, in either arm.** About one run in 50 flips the digest of one timed rep:
   1 of 69 parent runs and 1 of 38 fix runs in our runs; 1 of 42 parent runs and 0 of 19 fix runs in the independent
-  test. The flip is the engine's, not the fix's. The gate therefore allows one rerun of a scoring job, but not of a
-  calibration, and a fresh 25-run calibration contains a flip about 4 times in 10.
+  test. The flip is the engine's, not the fix's. The gate therefore allows one rerun of a scoring job. A calibration
+  judges the fix against the majority of its parent runs, so a lone parent flip no longer fails it; about 8-11 % of
+  calibrations still need one rerun (a lone fix flip).
 
 Terms used below:
 - **parent**: the unmodified tree, commit `67475a6e`. **fix**: the human fix, commit `c72ea107`.
@@ -95,7 +97,18 @@ So the flip is an engine-level numeric event. Two explanations, both untested: t
 64 requests are still arriving, so the first batches can differ; or the asynchronous grammar compilation races with the
 scheduler. `check.py` therefore returns `rerun:exact` in scoring mode when counts, settings and the correctness pass
 all pass and exactly one rep of one run differs; the job is repeated once under a new label, and that verdict is final.
-Calibration mode has no rerun rule.
+
+**How a calibration judges `exact` (since 2026-11-25).** A calibration has 20 timed runs: 5 A/B pairs and 5 A/A pairs,
+so 15 parent runs and 5 fix runs. For each timed rep, the reference digest is the one shared by a strict majority of
+the 15 parent runs. Every fix rep must equal it. One differing fix rep, with everything else passing, gives
+`rerun:exact`, as in scoring; two or more give `fail:exact`. A parent rep that differs from the majority is reported
+as a parent flip and does not fail the calibration. More than 2 parent flips, or a rep with no strict majority, does
+fail it, because then the parent does not repeat well enough for an exact gate. At the measured flip rates (0.5-0.8 %
+of reps) about 8-11 % of calibrations need one rerun and about 0.2-0.6 % fail; under the old rule, which compared
+each fix run only with its paired parent, about 15-20 % failed. The rule was validated by an offline replay of 22
+recorded jobs (ours and the independent tester's): the tester's failing calibration now passes, every scoring, quick
+and transfer job gets a byte-identical verdict, and synthetic cases behave as stated (a lone fix flip gives
+`rerun:exact`, a real fix-vs-parent mismatch still fails). A GPU re-run with the new rule is pending.
 
 ## Which broken or cheating versions are caught?
 
@@ -126,9 +139,10 @@ passes).
 5. **A rare false fail.** The timed load flips one rep in about one run of 50, in either arm (ours: 1/69 parent runs,
    1/38 fix runs; the independent tester's: 1/42 parent runs, 0/19 fix runs; the second server: 0 flips in 123 timed
    reps). With the one-rerun rule a correct candidate is rejected only if its rerun flips too. The cause is untested.
-   Calibration mode has no rerun rule, and at ~1 run in 50 a 25-run calibration contains a flip about 4 times in 10:
-   **a fresh calibration can end `fail:exact` with nothing wrong** (it did in the independent test). Repeat it, or
-   judge it on fix-vs-parent digests only.
+   Until 2026-11-25 calibration had no rerun rule, and **a fresh calibration could end `fail:exact` with nothing
+   wrong** (it did in the independent test). The calibration now judges fix reps against the parents' majority digest
+   (above): a lone parent flip passes, but about 8-11 % of calibrations still need one rerun and about 0.2-0.6 % fail
+   at the measured rates. The new rule has been checked offline only; a GPU re-run is pending.
 
 ## What does it cost to run?
 
@@ -155,15 +169,17 @@ material, rebuilt the package from an empty directory on the 4-GPU server (GPUs 
 - Correctness pass 24/24, logprob difference 0, in every job on both GPUs, and equal to `ref_correct.json`.
 - **The first fresh calibration ended `fail:exact`.** In one A/B pair the *parent* run flipped one timed rep: 8 of 64
   requests diverged (at output positions 4 to 82) and all kept writing free text. Every other timed digest was
-  identical. `check.py` applies the one-rerun rule only to scoring and `quick` jobs, so one engine-level flip fails a
-  calibration. The second calibration passed.
+  identical. `check.py` then applied the one-rerun rule only to scoring and `quick` jobs, so one engine-level flip
+  failed a calibration. The second calibration passed.
 - Flip counts in this test (official load, both GPUs, digests identical across GPUs): parent 1/42 runs (1/126 reps),
   fix 0/19 runs (0/57 reps), warm-ups 0/13.
 - Variants: `noadvance` 1.794 `fail:correct`, `noparser` 1.779 `fail:exact,correct,settings`, `short` 2.326
   `fail:counts,exact`, all as ours. Transfers: 8 requests 1.356 (ours 1.347), no structured output 0.999 (ours 1.000).
-- The tester's suggested fixes, not yet in the package: in calibration, judge `exact` on fix-vs-parent pairs only and
-  report parent-parent flips separately, or apply the one-rerun rule there too; and correct `RUN.md`'s time estimate for
-  this task (~40 + 18 min) to the measured ~24 + 9 min.
+- The tester's suggested fixes: in calibration, judge `exact` on fix-vs-parent only and report parent-parent flips
+  separately, or apply the one-rerun rule there too; and correct `RUN.md`'s time estimate (~40 + 18 min) to the
+  measured ~24 + 9 min. **Both applied on 2026-11-25** (the majority rule above; `RUN.md` now says ~24 + ~9 min). In
+  the offline replay the tester's failing calibration reads `ties_ref` 1.7899 with one parent flip reported. A GPU
+  re-run is pending.
 
 **Second server: PASS** (`docs/acceptance/batch5.md`). Another independent tester ran an earlier version of the package
 on the 2-GPU server (a second RTX 4090 server with 2 GPUs): calibration **1.7878**, 12 scoring jobs **1.778-1.806**, all

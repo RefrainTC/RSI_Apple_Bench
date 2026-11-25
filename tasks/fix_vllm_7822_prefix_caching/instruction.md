@@ -36,12 +36,12 @@ tasks/iso7822`) builds it at `package/tasks/iso7822/workspace`: `instruction.md`
 `repo/vllm/`, the Python source of the installed vLLM. The benchmark imports `repo/vllm/` through an overlay on the
 unmodified venv, so what you change there is what is measured.
 
-- **Work in place, in `tasks/iso7822/workspace` itself.** Its `dev_run.sh` always measures that directory: run from a
-  copy, it silently measures the untouched workspace and reports no gain even for a correct fix.
+- You may work in `tasks/iso7822/workspace` or in a copy of it: its `dev_run.sh` measures the workspace it sits in.
 - `repo/` is its own git repository whose first commit is the pristine tree. Run `git diff` **inside `repo/`** to see
   your patch: the workspace root is a separate repository that ignores `repo/`, so `git diff` there shows nothing.
-- The workspace holds an older `instruction.md` (another title, no Scoring, Measuring or Rules sections). This text
-  takes precedence.
+- The workspace's `instruction.md` is this text when the package is built where it ships, as `package/` next to this
+  file. If the package was copied elsewhere first, the workspace gets the package's own shorter task text instead
+  (another title, no Scoring or Measuring sections); this text takes precedence.
 - `bash dev_run.sh` snapshots the workspace, runs the gate and runs the benchmark once with your code (about 1
   minute). `--baseline` also runs the original right after; `--correct` also runs the greedy check; `OL=...` and
   `REPEAT=...` change the output length and number of requests for exploration. Scoring always uses the defaults.

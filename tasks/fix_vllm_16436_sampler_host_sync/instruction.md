@@ -38,13 +38,12 @@ tasks/iso16436`) builds it at `package/tasks/iso16436/workspace`: `instruction.m
 `repo/vllm/`, the Python source of the installed vLLM. The server imports `repo/vllm/` through an overlay on the
 unmodified venv, so what you change there is what is measured.
 
-- **Work in place, in `tasks/iso16436/workspace` itself.** Its `dev_run.sh` always measures that directory: run from
-  a copy, it silently measures the untouched workspace.
+- You may work in `tasks/iso16436/workspace` or in a copy of it: its `dev_run.sh` measures the workspace it sits in.
 - `repo/` is its own git repository whose first commit is the pristine tree. Run `git diff` **inside `repo/`** to see
   your patch: the workspace root is a separate repository that ignores `repo/`, so `git diff` there shows nothing.
-- The workspace holds an older `instruction.md` (another title, no Scoring, Measuring or Rules sections). This text
-  takes precedence.
-
+- The workspace's `instruction.md` is this text when the package is built where it ships, as `package/` next to this
+  file. If the package was copied elsewhere first, the workspace gets the package's own shorter task text instead
+  (another title, no Scoring or Measuring sections); this text takes precedence.
 - `bash dev_run.sh` snapshots the workspace, runs the gate, starts the server with your code and runs the load once
   (about 3-4 minutes). `--baseline` also runs the original right after (compare against it: a single run's TPOT varies
   by about ±1 %); `--correct` also runs the output check; `RATE=...`, `NP=...`, `IN=...`, `OL=...` change the load for

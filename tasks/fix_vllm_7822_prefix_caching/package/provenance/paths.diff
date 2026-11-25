@@ -2,9 +2,25 @@
 +++ package/harness/build_workspace.sh
 @@ -3,0 +4 @@
 +[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
-@@ -18 +19 @@
+@@ -13 +14,6 @@
+-cp "$TD/instruction.md" "$WS/instruction.md"
++# instruction.md (package change 2026-11-25, acceptance acc7): when this package sits as package/ inside a public task
++# directory (../instruction.md and ../task.toml next to $ISO_ROOT), the workspace gets that public instruction, the task
++# statement an agent is given there; otherwise (stand-alone package, internal trials) the package's own task text.
++PUBI=$(readlink -f "$ISO_ROOT/..")/instruction.md
++if [ -f "$PUBI" ] && [ -f "$(dirname "$PUBI")/task.toml" ]; then cp "$PUBI" "$WS/instruction.md"; INSTR_SRC=$PUBI
++else cp "$TD/instruction.md" "$WS/instruction.md"; INSTR_SRC=$TD/instruction.md; fi
+@@ -14,0 +21,2 @@
++# dev_run.sh measures the workspace it lives in (package change 2026-11-25, acceptance acc7: it used to measure
++# $TD/workspace, so run from a copy it timed the untouched workspace and wrote dev_runs/ there).
+@@ -17,2 +25,2 @@
+-# dev_run.sh [--baseline] [--correct] [VAR=VALUE ...] : test your current workspace on the GPU (see instruction.md).
 -exec bash /home/coder/work/p2-port/harness/dev_run_impl.sh $TD "\$@"
-+exec bash $ISO_ROOT/harness/dev_run_impl.sh $TD "\$@"
++# dev_run.sh [--baseline] [--correct] [VAR=VALUE ...] : test the workspace this script is in on the GPU (see instruction.md).
++exec bash $ISO_ROOT/harness/dev_run_impl.sh $TD --ws "\$(dirname "\$(readlink -f "\$0")")" "\$@"
+@@ -26 +34 @@
+-echo "workspace: $WS ($(find "$WS/repo" -name '*.py' | wc -l) .py files); pristine manifest: $TD/pristine.sha256"
++echo "workspace: $WS ($(find "$WS/repo" -name '*.py' | wc -l) .py files); instruction.md from $INSTR_SRC; pristine manifest: $TD/pristine.sha256"
 --- authors/harness/calibrate.sh
 +++ package/harness/calibrate.sh
 @@ -4,0 +5 @@
@@ -169,6 +185,20 @@
 +# The job never runs from the staged master: it runs from a per-GPU copy (<run venv>, $P2T/run/g<gpu>/<name>).
 @@ -11,0 +12 @@
 +[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+--- authors/scripts/make_canaries_r4f.sh
++++ package/scripts/make_canaries_r4f.sh
+@@ -14,0 +15,8 @@
++# package (2026-11-25, acceptance acc7): the authors' scripts/make_canaries_r4f.sh (sha256 b410c183...), which made the
++# card's C5v, C9-C12, V1 and V2; only the harness path is replaced by $ISO_ROOT and env.sh is sourced. Each workspace is
++# scored with harness/score.sh as usual. C12 needs a dev run of its workspace first, and it rewrites the GPU's per-run
++# copy of the parent venv, so remove that copy afterwards (the authors' queue job 24_r4f_C12, paths as variables):
++#   bash $ISO_ROOT/harness/dev_run_impl.sh $TD --ws <out>/v7822_C12 --out <out>/v7822_C12_devout --id v7822_c12_dev
++#   bash $ISO_ROOT/harness/score.sh $TD v7822_C12 <out>/v7822_C12
++#   rm -rf $P2T/run/g$GPU/7822_parent $P2T/run/g$GPU/7822_parent.baseline
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -16 +24 @@
+-TD=$(readlink -f "$1"); OR=$2; shift 2; H=/home/coder/work/p2-port/harness
++TD=$(readlink -f "$1"); OR=$2; shift 2; H=$ISO_ROOT/harness
 --- authors/scripts/p2_cpus.sh
 +++ package/scripts/p2_cpus.sh
 @@ -1,0 +2,3 @@

@@ -31,11 +31,11 @@ metric = "median rep wall time over 3 reps (64 structured-output requests x 1024
 reference_speedup = 1.79
 band_pct = 3.0
 aa_band_pct = 3.0
-gate = "exact: output token counts, resolved vllm_config incl. structured_outputs_config (num_gpu_blocks ignored), timed-rep digests, and a 24-question pass (thinking on, JSON schema, 384 tokens with logprobs) identical to the same job's parent pass; one rerun allowed when exactly one timed rep of one run differs (scoring mode only)"
+gate = "exact: output token counts, resolved vllm_config incl. structured_outputs_config (num_gpu_blocks ignored), timed-rep digests, and a 24-question pass (thinking on, JSON schema, 384 tokens with logprobs) identical to the same job's parent pass; one rerun allowed when exactly one timed rep of one run differs; in calibration, fix reps are judged against the majority parent digest per rep and up to 2 parent flips are reported, not gated"
 
 [metadata.rsi_apple_bench.measured]
 rtx4090 = { ref = 1.79, aa_max_pct = 2.54, jobs = 8, minutes_per_scoring = 8.6 }
 
 [metadata.rsi_apple_bench.acceptance]
-independent = "PASS-with-fixes (same server, median of 5 jobs 1.790; first fresh calibration fail:exact from one parent flip); PASS on a second server (2-GPU, 0 flips in 123 reps)"
+independent = "PASS-with-fixes (same server, median of 5 jobs 1.790; first fresh calibration fail:exact from one parent flip; calibration rule fixed 2026-11-25, GPU re-run pending); PASS on a second server (2-GPU, 0 flips in 123 reps)"
 report = "docs/acceptance/batch6.md, docs/acceptance/batch5.md (second server)"

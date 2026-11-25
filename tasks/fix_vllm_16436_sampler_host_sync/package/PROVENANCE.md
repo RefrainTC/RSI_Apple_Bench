@@ -33,6 +33,11 @@ their venv tooling `/home/coder/work/rsi/t5-isobench/scripts/{setup.sh,setup_fix
    job on a newly staged machine was voided as `audit_flag` because transformers wrote that file).
 6. **`harness/dev_run_impl.sh`** (agent dev path only): its `env -i` re-exec passes the package variables on.
 7. **`harness/make_canaries.sh`**: canary C7g's literal reference path is written with `$ISO_ROOT` expanded.
+8. **`harness/build_workspace.sh`** (agent dev path only; added 2026-11-25 after acceptance acc7). The `dev_run.sh` it
+   writes passes `--ws <the directory holding dev_run.sh>` to `dev_run_impl.sh`; the authors' version measured
+   `$TD/workspace` whatever copy it was run from. The workspace's `instruction.md` is the public task's `instruction.md`
+   when the package sits as `package/` in a public task directory, otherwise `tasks/iso16436/instruction.md` as before.
+   Scoring (`score.sh`, which is given the workspace explicitly) is unchanged.
 
 Deliberately unchanged: the gate's deny-list patterns (`p2_gate_rules.py`, `kernel_gate.py`) and the redaction
 pattern in `agent_view.py` still name the authors' paths. They reject candidate code that mentions `p2-port`,
