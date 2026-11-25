@@ -69,7 +69,7 @@ REF is the human fix's (or Apple oracle's) calibrated speedup on that GPU. A/A i
 | vLLM #37338 (cold start) | 1.29 (±2%) | **1.176** (jobs 1.178, 1.183); A/A 0.57%; about 36 min | runs as shipped; its re-read pass peaks at 30.1 GB, only about 0.6 GB under our limit |
 | SGLang #27868 | 1.0276 (±0.5%) | **1.058** (jobs 1.053-1.061); A/A 0.56%; about 8.4 min | needs a CUDA 12.9 compiler for FlashInfer (below) |
 | SGLang #14956 | 1.31 (±2%) | **1.487** (calibration), 1.511 and 1.489 (scoring); A/A job 1.007; about 14 min | runs as shipped |
-| vLLM #35442 | 1.037 (±1%) | smoke test passes; scoring still running | memory utilization 0.80 → 0.60 (at 0.80 the card reached 31.1 GB during CUDA-graph capture) |
+| vLLM #35442 | 1.037 (±1%) | **1.107** (3 jobs: 1.1125, 1.1070, 1.1061); A/A 2.94 %; both variants caught | memory utilization 0.80 → 0.60 (at 0.80 the card reached 31.1 GB during CUDA-graph capture) |
 | vLLM #27418 | 1.69 (±3%) | smoke test passes; scoring still running | memory utilization 0.60 and re-read pass 0.38, as precautions |
 | vLLM #30056 | 1.79 (±3%) | smoke test passes; scoring still running | memory utilization 0.60, as a precaution |
 | SGLang #20503 | 1.08 (±4%) | not tried | |

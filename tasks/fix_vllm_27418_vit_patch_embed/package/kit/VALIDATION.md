@@ -111,3 +111,20 @@ Logs are in `/tmp/kit/logs/`:
 
 Reward files are in `/tmp/kit/rewards/`. Job results are in `/tmp/kit/sgl16521/results/`. The monitor reports, the
 seal, the gate record and the scan reports are in `/tmp/kit/sgl16521/kit_state/`.
+
+## Follow-up: c5y-sglang family (sgl20503), RTX 5090, 2026-11-25
+
+Built fresh from the package and checked against its manifest. Kit copied from this folder. The whole chain ran under one hold of the GPU lock.
+
+| Step | Result |
+|---|---|
+| Agent view | 12 GB in 64 s; leak scan **0 hard hits**. The only soft hits were the digits "20503" inside third-party files (scipy, flashinfer checksums). |
+| Seal of the parent (4 trusted trees, 80,507 files) | made in 13 s; **unchanged after a full calibration** (`seal ok`). Parent runs do not write into the parent venv, interpreter, model or CUDA tree, so the monitor raises no false tamper alarms on this family. |
+| Calibration `cal_g0` | 1.1300 (`above_ref` against the shipped 4090 REF 1.08) |
+| Fix scoring `s1_g0` | 1.1447 |
+| `set_ref.py cal_g0 s1_g0` | RTX 5090 REF **1.1374**, SD 0.91 %, band ±0.0183 (1.6 %) |
+| `dev_bench.sh` from the view | median rep 11.97 s; peak VRAM 26.9 GB |
+| `test.sh` (a) untouched tree | **1.0001, `no_gain`, reward 0.0005** (pairs 1.0086 / 0.9972 / 1.0001); monitor: 0 tree changes, 0 violations |
+| `test.sh` (b) human fix as a unified diff | **1.1206, `ties_ref`, reward 0.877** (pairs 1.1019 / 1.1242 / 1.1206); monitor: 0 tree changes, 0 violations |
+
+The human fix gains more on the RTX 5090 (1.137) than on the RTX 4090 (1.08). This is another case where each GPU type needs its own REF.

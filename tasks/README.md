@@ -31,7 +31,7 @@ Read [../docs/hardware.md](../docs/hardware.md) first: it covers CPU pinning, `T
 
 - **Best first task:** #16521. It has the largest margin over noise (3.83× against 0.6%), the shared harness with a candidate slot, and runs on both GPU types.
 - **Quickest to score with the shared harness:** #14956 (7.5 min per scoring), #30056 (8.6 min), #16521 (9 min). #6994 and #7822 score faster (4.5-4.7 min) but use the older layout, and #6994 has no candidate slot.
-- **Runs on both GPU types:** the Apple tasks, task C, Φ-Bench, #16521, #20972, #37338 and #27868. On the 5090, #14956 is measured; #35442, #27418 and #30056 are still being measured.
+- **Runs on both GPU types:** the Apple tasks, task C, Φ-Bench, #16521, #20972, #37338 and #27868. On the 5090, #14956 and #35442 are measured too; #27418 and #30056 are still being measured.
 - **Weakest:** #20503, an 8% effect against noise of up to 3%. #27868 and #35442 have small gains (3-4%) with small noise. A 0.4% noise swing moves their reward by about a tenth of full scale, so they make poor first tasks.
 - **Related tasks:**
   - #9460 and #14956 fix the same code path; count them as one family.
@@ -71,7 +71,7 @@ The speedups are on an RTX 4090, the median over scoring jobs. Minutes are per s
 | [fix_sglang_9460_mrope_decode_sync](fix_sglang_9460_mrope_decode_sync/) | SGLang | Qwen2-VL-2B-Instruct | 1.20× | 9 | no | PASS |
 | [fix_vllm_37338_cold_start_autotune](fix_vllm_37338_cold_start_autotune/) | vLLM | Qwen3.5-4B | 1.29× | 27 | yes, 1.18× | PASS |
 | [fix_sglang_27868_dual_stream_decode](fix_sglang_27868_dual_stream_decode/) | SGLang | Qwen3.5-4B | 1.03× | 11 | yes, 1.06× | PASS |
-| [fix_vllm_35442_spec_accept_count_copy](fix_vllm_35442_spec_accept_count_copy/) | vLLM | Qwen3.5-4B | 1.04× | 16 | being measured | PASS-with-fixes |
+| [fix_vllm_35442_spec_accept_count_copy](fix_vllm_35442_spec_accept_count_copy/) | vLLM | Qwen3.5-4B | 1.04× | 16 | yes, 1.11× (memory setting lowered) | PASS-with-fixes |
 | [fix_vllm_27418_vit_patch_embed](fix_vllm_27418_vit_patch_embed/) | vLLM | Qwen2-VL-2B-Instruct | 1.69× | 11 | being measured | PASS-with-fixes |
 | [fix_sglang_14956_mrope_text_sync](fix_sglang_14956_mrope_text_sync/) | SGLang | Qwen2-VL-2B-Instruct | 1.31× | 7.5 | yes, 1.49× | PASS |
 | [fix_vllm_30056_reasoning_end_scan](fix_vllm_30056_reasoning_end_scan/) | vLLM | Qwen3-0.6B | 1.79× | 8.6 | being measured | PASS-with-fixes |

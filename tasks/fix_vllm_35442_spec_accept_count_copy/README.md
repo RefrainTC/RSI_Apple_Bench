@@ -57,7 +57,9 @@ Fix median rep 3.59-3.62 s, parent 3.73-3.76 s (one parent run at 3.86 s): about
 |---|---|---|---|---|
 | RTX 4090 (4-GPU server) | **1.037** (median of the 5 jobs that set it: 1.0364) | ±1 % (1.027-1.047), the floor; between-job SD 0.13 % | 0.14 % and 0.44 % (authors); 1.42 % and 0.30 % (independent tester) | 10 by the authors, 4 by the tester |
 | RTX 4090 (2-GPU server) | scoring jobs 1.0383, 1.0368, 1.0376; warm calibration 1.0368 (second tester) | inside | 0.26 % and 0.28 % | 5 (incl. one calibration failed by the cache-copy defect) |
-| RTX 5090 | not run | - | - | - |
+| RTX 5090 | **1.107** (median of 3 jobs: calibration 1.1125, scoring 1.1070 and 1.1061), with the memory utilization lowered from 0.80 to 0.60 | not set (`gate.json` holds the 4090 REF, so these read `above_ref`) | 2.94 % (calibration); an A/A scoring job read 0.999 (pairs up to 1.98 %) | 3 |
+
+- **RTX 5090: the gain triples (10.7 % against 3.7 %), and the package needs one change.** At the shipped memory utilization of 0.80, the card reached 31.1 GB during CUDA-graph capture, so the 5090 runs used 0.60 (peak 24.8 GB). Both variants were caught there too: `short` 1.419 `fail:counts,exact`, `stale` 1.0996 `fail:correct`. Set a 5090 REF (for example with `kit/set_ref.py`) before scoring on that card.
 
 - Jobs that set REF: calibration 1.0378 (GPU1), scoring 1.0393 (GPU2) and 1.0364 (GPU3), empty-directory
   calibration 1.0361 and scoring 1.0362 (GPU0).

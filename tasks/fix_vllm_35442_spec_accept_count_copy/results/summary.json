@@ -1,115 +1,140 @@
 {
-  "task": "fix_vllm_35442_spec_accept_count_copy",
-  "metric": "median rep wall time over 3 reps (1 request x 256 random ids -> 512 greedy tokens, MTP 1 draft token), parent / candidate; job = median of 3 ABBA pairs",
-  "reference_speedup": 1.037,
-  "band_pct": 1.0,
-  "aa_band_pct": 1.0,
-  "gate": "exact: counts, settings (num_gpu_blocks ignored), timed-rep digests, 24-prompt natural-text pass (ids identical, logprobs within 1e-3 nats)",
-  "gpus": {
-    "rtx4090": {
-      "jobs": [
-        1.0378,
-        1.0393,
-        1.0364,
-        1.0361,
-        1.0362,
-        1.0369,
-        1.0371,
-        1.0422,
-        1.0365,
-        1.0377
-      ],
-      "jobs_note": "4-GPU server. First 5 set REF: calibration GPU1, scoring GPU2 and GPU3, empty-directory calibration and scoring GPU0. Then 3 later scoring jobs (GPUs 1, 0, 3), then the re-verify after the tester's fixes (calibration, scoring). All ties_ref.",
-      "between_job_sd_pct": 0.13,
-      "aa_max_pct": 0.44,
-      "aa_max_pct_note": "authors: 0.14 (GPU1 calibration), 0.44 (empty-directory calibration), 0.31 (re-verify); independent tester: 1.42 and 0.30",
-      "median_rep_s": {
-        "parent": "3.73-3.76",
-        "fix": "3.59-3.62"
-      },
-      "peak_vram_mib": 20608,
-      "minutes_per_scoring": "13-16",
-      "minutes_calibration": 34,
-      "minutes_setup": "12-20",
-      "draft_acceptance": {
-        "timed_load": "768 of 775 (99 %)",
-        "natural_text": "80 %"
-      },
-      "transfers": {
-        "text_1req": [
-          1.0385,
-          1.0372
-        ],
-        "4_requests_per_rep": 1.048,
-        "16_requests_per_rep": 1.052,
-        "official_load_with_stats": 1.0375
-      }
-    }
+ "task": "fix_vllm_35442_spec_accept_count_copy",
+ "metric": "median rep wall time over 3 reps (1 request x 256 random ids -> 512 greedy tokens, MTP 1 draft token), parent / candidate; job = median of 3 ABBA pairs",
+ "reference_speedup": 1.037,
+ "band_pct": 1.0,
+ "aa_band_pct": 1.0,
+ "gate": "exact: counts, settings (num_gpu_blocks ignored), timed-rep digests, 24-prompt natural-text pass (ids identical, logprobs within 1e-3 nats)",
+ "gpus": {
+  "rtx4090": {
+   "jobs": [
+    1.0378,
+    1.0393,
+    1.0364,
+    1.0361,
+    1.0362,
+    1.0369,
+    1.0371,
+    1.0422,
+    1.0365,
+    1.0377
+   ],
+   "jobs_note": "4-GPU server. First 5 set REF: calibration GPU1, scoring GPU2 and GPU3, empty-directory calibration and scoring GPU0. Then 3 later scoring jobs (GPUs 1, 0, 3), then the re-verify after the tester's fixes (calibration, scoring). All ties_ref.",
+   "between_job_sd_pct": 0.13,
+   "aa_max_pct": 0.44,
+   "aa_max_pct_note": "authors: 0.14 (GPU1 calibration), 0.44 (empty-directory calibration), 0.31 (re-verify); independent tester: 1.42 and 0.30",
+   "median_rep_s": {
+    "parent": "3.73-3.76",
+    "fix": "3.59-3.62"
+   },
+   "peak_vram_mib": 20608,
+   "minutes_per_scoring": "13-16",
+   "minutes_calibration": 34,
+   "minutes_setup": "12-20",
+   "draft_acceptance": {
+    "timed_load": "768 of 775 (99 %)",
+    "natural_text": "80 %"
+   },
+   "transfers": {
+    "text_1req": [
+     1.0385,
+     1.0372
+    ],
+    "4_requests_per_rep": 1.048,
+    "16_requests_per_rep": 1.052,
+    "official_load_with_stats": 1.0375
+   }
   },
-  "variants": [
+  "rtx5090": {
+   "jobs": [
+    1.1125,
+    1.107,
+    1.1061
+   ],
+   "ref": 1.107,
+   "aa_max_pct": 2.94,
+   "aa_scoring_job": 0.999,
+   "peak_vram_gb": 24.8,
+   "memory_utilization": 0.6,
+   "variants": [
     {
-      "name": "short",
-      "speedup": 1.32,
-      "verdict": "fail:counts,exact"
+     "name": "short",
+     "speedup": 1.419,
+     "verdict": "fail:counts,exact"
     },
     {
-      "name": "stale",
-      "speedup": 1.03,
-      "verdict": "fail:correct",
-      "note": "timed digests identical to the parent's; only the text pass catches it (0/24, up to 0.87 nats)"
-    },
-    {
-      "name": "spec2",
-      "speedup": 1.36,
-      "verdict": "fail:settings,correct"
+     "name": "stale",
+     "speedup": 1.0996,
+     "verdict": "fail:correct"
     }
-  ],
-  "acceptance": {
-    "verdict": "PASS-with-fixes",
-    "host": "same 4-GPU server, GPUs 0 and 1",
-    "speedups": [
-      1.0374,
-      1.0393,
-      1.0377,
-      1.036
-    ],
-    "speedups_note": "calibration (fail:correct from two harness defects), scoring, scoring, second calibration (passes)",
-    "aa_max_pct": [
-      1.42,
-      0.3
-    ],
-    "variants_same_verdict": "3 of 3",
-    "fixes": "cache-copy directory created and copy failure stops the job; calibration runs warm-ups before compared passes; re-verified from a new empty directory: calibration 1.0365, scoring 1.0377 ties_ref",
-    "second_host": {
-      "verdict": "PASS (given the cache-copy fix)",
-      "host": "2-GPU server",
-      "package_version": "before the harness fixes",
-      "calibrations": [
-        {
-          "speedup": 1.0379,
-          "verdict": "fail:correct",
-          "cause": "cache-copy defect, parent vs parent 18/24"
-        },
-        {
-          "speedup": 1.0368,
-          "verdict": "ties_ref"
-        }
-      ],
-      "scoring_jobs": [
-        1.0383,
-        1.0368,
-        1.0376
-      ],
-      "aa_max_pct": [
-        0.26,
-        0.28
-      ],
-      "variants_same_verdict": "3 of 3",
-      "transfers": {
-        "text_1req": 1.036,
-        "4_requests_per_rep": 1.007,
-        "16_requests_per_rep": 1.045
-      }
-    }
+   ],
+   "note": "0.80 memory utilization reached 31.1 GB on the 32 GB card; runs used 0.60"
   }
+ },
+ "variants": [
+  {
+   "name": "short",
+   "speedup": 1.32,
+   "verdict": "fail:counts,exact"
+  },
+  {
+   "name": "stale",
+   "speedup": 1.03,
+   "verdict": "fail:correct",
+   "note": "timed digests identical to the parent's; only the text pass catches it (0/24, up to 0.87 nats)"
+  },
+  {
+   "name": "spec2",
+   "speedup": 1.36,
+   "verdict": "fail:settings,correct"
+  }
+ ],
+ "acceptance": {
+  "verdict": "PASS-with-fixes",
+  "host": "same 4-GPU server, GPUs 0 and 1",
+  "speedups": [
+   1.0374,
+   1.0393,
+   1.0377,
+   1.036
+  ],
+  "speedups_note": "calibration (fail:correct from two harness defects), scoring, scoring, second calibration (passes)",
+  "aa_max_pct": [
+   1.42,
+   0.3
+  ],
+  "variants_same_verdict": "3 of 3",
+  "fixes": "cache-copy directory created and copy failure stops the job; calibration runs warm-ups before compared passes; re-verified from a new empty directory: calibration 1.0365, scoring 1.0377 ties_ref",
+  "second_host": {
+   "verdict": "PASS (given the cache-copy fix)",
+   "host": "2-GPU server",
+   "package_version": "before the harness fixes",
+   "calibrations": [
+    {
+     "speedup": 1.0379,
+     "verdict": "fail:correct",
+     "cause": "cache-copy defect, parent vs parent 18/24"
+    },
+    {
+     "speedup": 1.0368,
+     "verdict": "ties_ref"
+    }
+   ],
+   "scoring_jobs": [
+    1.0383,
+    1.0368,
+    1.0376
+   ],
+   "aa_max_pct": [
+    0.26,
+    0.28
+   ],
+   "variants_same_verdict": "3 of 3",
+   "transfers": {
+    "text_1req": 1.036,
+    "4_requests_per_rep": 1.007,
+    "16_requests_per_rep": 1.045
+   }
+  }
+ }
 }

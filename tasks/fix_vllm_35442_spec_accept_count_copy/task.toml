@@ -7,7 +7,7 @@ keywords = ["vllm", "regression", "speculative-decoding", "mtp", "hybrid-model",
 
 [environment]
 gpus = 1
-gpu_types = ["RTX 4090"]
+gpu_types = ["RTX 4090", "RTX 5090"]
 allow_internet = false   # setup (package/RUN.md steps 2-4) downloads wheels, the dependency lock and the model; scoring runs offline
 
 [metadata.rsi_apple_bench]
@@ -35,6 +35,7 @@ gate = "exact: output token counts, resolved vllm_config (num_gpu_blocks ignored
 
 [metadata.rsi_apple_bench.measured]
 rtx4090 = { ref = 1.037, aa_max_pct = 0.44, aa_max_pct_independent = 1.42, jobs = 10, minutes_per_scoring = "13-16" }
+rtx5090 = { ref = 1.107, aa_max_pct = 2.94, jobs = 3, note = "memory utilization lowered from 0.80 to 0.60 (0.80 reached 31.1 GB during CUDA-graph capture); package/harness/gate.json still holds the 4090 REF" }
 
 [metadata.rsi_apple_bench.acceptance]
 independent = "PASS-with-fixes (same server); PASS on a second server (2-GPU, scoring 1.0383, 1.0368, 1.0376)"
