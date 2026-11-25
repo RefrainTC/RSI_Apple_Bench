@@ -14,14 +14,15 @@ There are 22 tasks, one directory each. Every task is a real slowdown in vLLM or
 | `package/` | Self-contained scoring package for the `fix_*` tasks: pinned environments, scorer, loads, setup scripts. Start at `package/RUN.md` | no: it builds the reference fix and broken variants of it |
 | `environment/`, `tests/` | For the four tasks without a package: setup scripts, Dockerfile diffs and the scorer, in Apple's naming | `environment/` only where the README says so |
 
-**Keep the answer away from the agent.** Give it `instruction.md` and a copy of the unmodified source tree only. Run the package or scorer outside its reach, then score its tree with them. The "Measuring" section of `instruction.md` tells you, the operator, how to score a candidate. Following it builds the package, and `package/RUN.md` names the changed files. Don't let the agent run those steps itself. See [What is not ready yet](../README.md#what-is-not-ready-yet).
+**Keep the answer away from the agent.** Give it `instruction.md` and a copy of the unmodified source tree only. Run the package or scorer outside its reach, then score its tree with them. For the 11 mined tasks, `package/kit/make_agent_view.sh` builds the agent's directory, and its `instruction.md` is written for an agent working in that view. Score with `package/kit/test.sh`; see [Scoring an agent](../README.md#scoring-an-agent). For the 7 ISO-Bench tasks, the "Measuring" section is written for the operator: following it builds the package, which names the changed files, so don't let the agent run those steps itself.
 
 ## How do I run one?
 
 - **`fix_*` tasks (18):** follow `package/RUN.md`. Setup takes 10-50 minutes and needs internet; scoring runs offline.
   - The 11 mined packages share one harness. Calibrate once per GPU type with `harness/run.sh <label> cal`, then score each candidate with `harness/run.sh <label> score <name>`.
   - The 7 ISO-Bench packages are older and use their own job scripts, which their `RUN.md` describes.
-  - Each `instruction.md` says how a candidate tree is supplied. On a GPU other than the RTX 4090, set REF in `harness/gate.json` from your own calibration first. The scorer does not check the GPU model.
+  - To score agents with the 11 mined packages, use `package/kit/` (start at `kit/KIT.md`). It sets REF for your GPU, builds the agent's view and scores with `kit/test.sh`.
+  - For the 7 ISO-Bench packages, `instruction.md` says how a candidate tree is supplied. On a GPU other than the RTX 4090, set REF from your own calibration first, because their scorer does not check the GPU model.
 - **Apple tasks, task C, Φ-Bench (4):** follow the "How to run it" section of the task's `README.md`. These use Apple's or Φ-Bench's own verifier, with our changes shipped as diffs and scripts.
 
 Read [../docs/hardware.md](../docs/hardware.md) first: it covers CPU pinning, `TZ=UTC` and what the RTX 5090 needs.

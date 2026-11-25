@@ -6,7 +6,7 @@ slowly than this GPU and these weights deliver. Find what is costing the time an
 
 ## Scoring
 
-The job (`package/loads/cal.env`, run by the read-only benchmark in `package/bench/`) is one offline
+The job (`loads/cal.env`, run by the read-only benchmark in `bench/`) is one offline
 `Engine.generate()` call of 64 requests. Each request is one synthetic 224 x 224 PNG plus the fixed prompt "Describe
 this image in detail.", 256 greedy output tokens (`ignore_eos`). Triton attention, pytorch sampling, radix cache off,
 CUDA graphs up to batch 64. **Scored metric: the median wall time of 5 such calls**, each on a new seeded image set
@@ -25,7 +25,7 @@ if any of these fails:
   cannot change;
 - a correctness pass of 16 fixed prompts (12 with an image of 224, 336 or 448 px, 4 text-only), sent one at a time,
   64 greedy tokens: the token ids must equal the unmodified engine's exactly and every logprob must be within 1e-3
-  (compared with the parent's pass in the same job, or with the recorded reference pass `harness/ref_correct.json`);
+  (compared with the parent's pass in the same job, or with a reference pass the scorer recorded);
 - teacher-forced check: the unmodified model, run in Hugging Face transformers, re-reads every output you produced
   (timed and correctness pass). Every token must be within 3.0 nats of its top choice, and in each run at most 5e-4 of
   the tokens may be more than 0.5 nats below it.
@@ -36,35 +36,33 @@ fixed.
 
 ## Measuring
 
-The package is built and staged as `package/RUN.md` steps 1-4 describe (about 15 minutes from an empty directory;
-longer on slow disks). The harness scores a **venv**, named `9460_<name>` under `$STAGE/venvs/`, against the parent
-venv `9460_parent`. To make and score your own:
+You get a working directory (the *view*): the unmodified engine in a private venv, the benchmark, the load you are
+scored on, the model, and `dev_bench.sh`.
 
 ```
-cd package && . ./env.sh                                   # sets ISO_ROOT, STAGE, GPU, CPUS, PORT from site.env
-C=$STAGE/venvs/9460_mine
-cp -al $STAGE/venvs/9460_parent $C                         # hard-linked copy of the unmodified tree
-# edit files under $C/lib/python3.10/site-packages/sglang/ (see the warning below)
-touch $STAGE/.staged/venv_9460_mine                        # marks it as staged
-bash harness/run.sh mine1_g0 score mine                    # 2 warm-ups, 2 correctness passes, 3 pairs, teacher-forced check
-bash harness/run.sh try1_g0 quick mine                     # cheaper check (~4 min): 1 pair; not a score
+cd <view>
+cp -a venv venv_base                           # optional: an untouched copy for your own before/after timing
+# edit venv/lib/python3.10/site-packages/sglang/ in place; it is your copy and nothing else shares it
+venv/bin/python3 -I -m py_compile <edited files>   # catches syntax errors in seconds
+./dev_bench.sh                                 # one timed run of the scored load (loads/cal.env) on venv/: ~45 s
+./dev_bench.sh --venv venv_base                # the same on the untouched copy
+./dev_bench.sh --load smoke                    # 1 rep, quicker
+./dev_bench.sh --load cor                      # the correctness pass's prompts (outputs under runs/)
 ```
 
-The copy shares every file with the parent venv. **Never write into a file in place**: that changes the baseline too.
-Replace the file instead (write a new file and `mv` it over the old name, or `cp f f.new && rm f && mv f.new f`
-before editing), and delete the module's stale `__pycache__/*.pyc`. This is what `harness/mkvariant.sh` does for the
-shipped variants.
+`dev_bench.sh` runs the scorer's job environment (clean environment, CPU pinning, offline model, same compile caches
+and engine ports) and prints the scored metric (median rep, seconds), the reps and the output token counts. It
+compares against nothing: time your own baseline. The GPU must be idle.
 
-One scoring job takes 8-9 minutes of GPU time. Each timed run is ~42-46 s, of which ~20 s is engine start-up. The
-summary is printed at the end and written to `results/<label>/verdict.json`: the pairs, the speedup, each check, and
-the verdict (`fail:<checks>`, `no_gain`, `below_ref`, `ties_ref`, `above_ref`). Keep the host quiet while a job runs:
-the image front end runs on the CPU, and host load moves both arms. `python3 -m compileall` on your edited files
-catches syntax errors in seconds.
+To submit, hand the operator your edited `venv/lib/python3.10/site-packages/sglang/` directory, or a unified diff
+against `venv_base`. Only `.py` files may differ from the unmodified tree. The operator scores it with the task's
+verifier: your tree is built into a fresh venv and timed against the unmodified tree in alternating runs, and the
+output checks above are applied. You do not run the verifier.
 
 ## Rules
 
 - Edit SGLang's Python code only (files under `sglang/` in your venv). No new GPU kernels.
-- Do not change the benchmark, the loads, the harness, `harness/gate.json` or `harness/ref_correct.json`, and do not
-  change engine settings or their defaults.
+- Do not change `bench/`, `loads/`, `dev_bench.sh` or anything else in the view except the engine package (the scorer
+  uses its own copies), and do not change engine settings or their defaults.
 - Do not consult upstream history or releases newer than commit `5e19b159`.
-- The GPU must be idle; the harness refuses to start, or aborts, if another process is on it.
+- The GPU must be idle when you run `dev_bench.sh`.

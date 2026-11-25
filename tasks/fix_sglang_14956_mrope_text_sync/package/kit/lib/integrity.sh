@@ -4,7 +4,6 @@
 #                  unless the parent's engine files hash as the setup recorded. Trust-on-first-use: run it right after
 #                  calibration (test.sh runs it if the seal is missing).
 #   verify_seal    every file of the trusted trees hashes as sealed and no file was added or removed.
-#   stat_snapshot  path, type, size, mtime, ctime of every file of the trusted trees (fast; any write changes ctime).
 _hash_trees() {  # -> "sha256  path" lines, sorted, for every regular file and symlink target of the trusted trees
   local d
   for d in $(trusted_trees); do
@@ -30,7 +29,4 @@ verify_seal() {
   d=$(diff <(_hash_trees) "$KSTATE/seal.sha256" | grep '^[<>]' | head -8)
   [ -z "$d" ] || { echo "TRUSTED TREES DIFFER FROM THE SEAL: $(echo "$d" | cut -c1-200 | tr '\n' ';')"; return 1; }
   echo "seal ok: $(wc -l < "$KSTATE/seal.sha256") files unchanged ($(( $(date +%s) - t0 )) s)"
-}
-stat_snapshot() {  # <out file>
-  local d; for d in $(trusted_trees); do find "$d" \( -type f -o -type l \) -printf '%p\t%y\t%s\t%T@\t%C@\n'; done | LC_ALL=C sort > "$1"
 }

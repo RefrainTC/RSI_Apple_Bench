@@ -186,3 +186,12 @@ on `rerun:exact`, run it once more under a new label. Variants:
 `bash harness/mkvariant.sh noadvance && bash harness/run.sh v_noadvance quick var_noadvance`. Scoring your own tree is
 described in `instruction.md`. Before giving the package to an agent, hide what names the fix (see the Rules in
 `instruction.md`): the package was written for human readers and is not sealed.
+
+## Scoring an agent
+
+Use the kit in `package/kit/` (`package/kit/KIT.md`):
+1. Calibrate on your GPU, then run `kit/set_ref.py`.
+2. Build the agent's directory with `kit/make_agent_view.sh`. Give the agent only that and `instruction.md`.
+3. Score its edited engine directory, or a diff, with `kit/test.sh`, which writes a reward file.
+
+The "hide the package" advice above still applies: the agent must never see `package/`.

@@ -54,7 +54,7 @@ A few things to keep in mind:
 
 ## How a task is laid out
 
-We follow Apple's directory layout and metadata style, and add what a reproducible measurement needs. The tasks cannot yet be run by Apple's Harbor harness: the `fix_*` tasks have no `tests/test.sh` entry point (see [What is not ready yet](#what-is-not-ready-yet)). [tasks/README.md](tasks/README.md) lists every task grouped by origin, with engine, model, minutes per scoring and GPU support:
+We follow Apple's directory layout and metadata style, and add what a reproducible measurement needs. For the 11 mined `fix_*` tasks, `package/kit/test.sh` plays the role of Apple's `tests/test.sh` (see [Scoring an agent](#scoring-an-agent)). There are no container images yet. [tasks/README.md](tasks/README.md) lists every task grouped by origin, with engine, model, minutes per scoring and GPU support:
 
 ```
 tasks/<task>/
@@ -66,7 +66,7 @@ tasks/<task>/
   package/           self-contained scoring package: pinned environments, scorer, loads, setup scripts; start at RUN.md
 ```
 
-**Keep the package away from an agent under test.** `package/` builds the reference fix as its own arm, and `package/variants/` holds broken versions of that fix. `package/RUN.md` also names the files the fix changes. Give an agent the symptom and rules from `instruction.md` and a copy of the unmodified tree only. Then score its tree yourself with the package. The "Measuring" section of `instruction.md` is written for whoever runs the scorer. Following it means building the package, so an agent that does that sees the answer.
+**Keep the package away from an agent under test.** `package/` builds the reference fix as its own arm, and `package/variants/` holds broken versions of that fix. `package/RUN.md` also names the files the fix changes. Give an agent `instruction.md` and an agent view only. For the 11 mined tasks, `package/kit/make_agent_view.sh` builds that view. Then score its tree yourself.
 
 The packages are copies of the ones we verified. In the public copies, internal host names and home-directory paths are replaced with placeholders. One Chinese-language harness README is replaced with an English translation, and five more Chinese notes are left out for now. `MANIFEST.sha256` was regenerated after those changes. Nothing else differs.
 
@@ -84,19 +84,24 @@ The 7 ISO-Bench packages are older and use their own job scripts, which their `R
 
 You need Linux, an NVIDIA GPU with a driver for CUDA 12.4 or newer (the 5090 needs a newer one), `uv`, and 25–65 GB of local disk per task. The GPU must be otherwise idle: the harness refuses to run if another process is using it.
 
+## Scoring an agent
+
+The 11 mined `fix_*` packages ship an agent kit in `package/kit/` (start at `package/kit/KIT.md`):
+
+1. Calibrate once on your GPU type, then run `kit/set_ref.py`. This writes that GPU's reference speedup and band into `gate.json`, together with the GPU's name.
+2. Run `kit/make_agent_view.sh <dir>` to build the agent's working directory. It holds a private copy of the unmodified engine, the benchmark, the scored load, the model and `dev_bench.sh`, and no trace of the fix. The script scans the result for leaks.
+3. Give the agent `instruction.md` and that directory only. It edits the engine in place and times its own runs with `dev_bench.sh`.
+4. Score its edited engine directory, or a diff, with `kit/test.sh`. Like Apple's `tests/test.sh`, it writes a reward file. It refuses if the GPU differs from the calibrated one. The candidate is built as a real copy, never hard-linked to the baseline. The baseline, the package and the scorer's configuration are hash-checked before, during and after the job.
+
+We validated the kit end to end on an RTX 5090 with #16521. The untouched tree scored 1.00 (`no_gain`, reward 0), the human fix's diff scored `ties_ref` (reward 0.999), and a broken variant failed the gate. Every tamper and GPU-mismatch case was refused. See [docs/acceptance/kit-validation.md](docs/acceptance/kit-validation.md). The other packages share the same harness layout and passed static checks, but have not yet been scored through the kit on a GPU.
+
 ## What is not ready yet
 
-The repo reproduces each reference fix and its numbers. Using it to score agents on your own GPUs still needs work:
-
-- **Reference scores are per GPU type.** `package/harness/gate.json` holds the RTX 4090 reference speedup, and the scorer does not check which GPU it runs on. On any other GPU, rerun the calibration and set REF and the band from your own jobs before trusting verdicts or rewards. That takes about 2–3 GPU-hours per `fix_*` task, and 2–12 GPU-hours for the other four.
+- **The scorer still trusts the candidate's process.** Timing and the settings readback run inside the candidate's Python process, as the agent's own user. The kit *detects* writes to the baseline but cannot stop a candidate from faking its own clock. Run candidates in a sandbox before using scores as rewards for an adversarial agent.
+- **Only the 11 mined packages have the kit.** The 7 ISO-Bench packages use an older harness. #6994 and #14857 have no candidate slot at all, and their `instruction.md` describes an untested workaround. The four tasks without a package score only the reference fix and our built-in variants.
 - **NVIDIA only.** Every package pins CUDA builds of PyTorch, vLLM and SGLang and uses `nvidia-smi`. AMD GPUs (ROCm) would need the engines re-ported, which changes the task.
-- **No agent view yet.** There is no bundle that contains only the unmodified tree and the benchmark. You have to stage one yourself, or run the measurements on the agent's behalf.
-- **Candidate trees are hard-linked to the baseline.** The documented candidate venv is a `cp -al` copy of the parent. A tool that edits a file in place changes the baseline too, and the harness does not re-hash the parent before scoring. Replace files rather than editing them, or copy the engine package for real.
-- **The scorer trusts the candidate's process.** Timing and the settings readback run inside the candidate's Python process. A candidate that tampers with them is not caught. Add an outside check before using scores as agent rewards.
-- **Some tasks have no candidate input.**
-  - The four tasks without a package score only the reference fix and our built-in variants. A staging step for an agent's tree is not shipped yet.
-  - The #6994 and #14857 packages have no candidate slot. Their `instruction.md` describes an untested workaround.
-- **No Harbor entry point.** No `fix_*` task has an `environment/Dockerfile`, `tests/test.sh` or `solution/solve.sh`.
+- **Calibration costs GPU time.** Setting REF on a new GPU type takes about 2-3 GPU-hours per `fix_*` task (one calibration and two scoring jobs).
+- **No container images.** The kit runs on the host. There is no `environment/Dockerfile` for Harbor-style isolation yet, and inside a container `nvidia-smi` hides other processes, so the harness's busy-GPU guard would not work.
 
 ## What we learned
 

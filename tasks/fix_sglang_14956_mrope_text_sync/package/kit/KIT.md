@@ -31,8 +31,10 @@ The kit lives in `<package>/kit/`. Its scripts find the package one directory up
    never the package. The scan report goes to `kit_state/view_scan_<dir>.txt`, outside the view, because it lists
    the terms it searched for.
 5. **Score**: `KIT_LOCK=/path/gpu.lock REWARD_FILE=/logs/verifier/reward.json bash kit/test.sh <agent engine dir or diff>`.
-   The first `test.sh` run also *seals* the parent (~1-2 min): it byte-compiles the parent venv and the interpreter,
-   then records the sha256 of every file of the trusted trees in `kit_state/seal.sha256`.
+   The first `test.sh` run also *seals* the parent (12 s on sgl16521; longer if much is left to byte-compile): it
+   byte-compiles the parent venv and the interpreter, then records the sha256 of every file of the trusted trees
+   (80k files, ~15 GB) in `kit_state/seal.sha256`. Each later check takes 2-3 s. On sgl16521 the kit adds about 35 s
+   to a 9-minute scoring job.
 
 `test.sh` exits 0 when it scored the job, whatever the reward. It exits 3 on a refusal and 1 on an error. The
 reward is `check.py`'s reward when every check passes, and 0 otherwise. The reward file looks like this:
@@ -94,4 +96,7 @@ the view.
 
 Families: `c5x` (sgl16521, sgl20972), `c5y-sglang` (sgl9460, sgl14956, sgl17005, sgl20503, sgl27868) and `c5y-vllm`
 (vllm27418, vllm30056, vllm35442, vllm37338). The kit detects the family from `bench/`. It reads the timed runs' job
-environment from `harness/run.sh` and refuses with "needs an adapter" if the layout is unknown.
+environment from `harness/run.sh` and refuses with "needs an adapter" if the layout is unknown. Validated end to end
+on sgl16521 (RTX 5090); `make_agent_view.sh` and `make_candidate.sh` validated on sgl20503; the rest checked
+statically (see `VALIDATION.md`). On vllm37338 the harness's own `audit.py` hashes every file of a real-copy
+candidate (it skips hard-linked files), which adds a minute or two per scoring job.

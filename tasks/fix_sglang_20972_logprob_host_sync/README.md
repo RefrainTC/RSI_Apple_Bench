@@ -145,3 +145,12 @@ bash harness/run.sh cal_g0 cal && bash harness/run.sh s1_g0 score               
 ```
 
 Every step, the expected output and the variant commands are in `package/RUN.md`.
+
+## Scoring an agent
+
+Use the kit in `package/kit/` (`package/kit/KIT.md`):
+1. Calibrate on your GPU, then run `kit/set_ref.py`.
+2. Build the agent's directory with `kit/make_agent_view.sh`. Give the agent only that and `instruction.md`.
+3. Score its edited engine directory, or a diff, with `kit/test.sh`, which writes a reward file.
+
+The "hide the package" advice above still applies: the agent must never see `package/`.

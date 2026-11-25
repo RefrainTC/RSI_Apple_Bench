@@ -9,7 +9,7 @@ shape. Find what is costing the time and repair it in vLLM's Python source.
 
 Every timed run is a new Python process with **empty** compile caches (Triton, Inductor, vLLM's compile cache, CUDA
 JIT and FlashInfer caches, HOME and XDG caches: new directories per run, deleted afterwards). The job
-(`package/loads/cal.env`, run by the read-only benchmark in `package/bench/`) is
+(`loads/cal.env`, run by the read-only benchmark in `bench/`) is
 `LLM(max_model_len=4096, max_num_seqs=16, gpu_memory_utilization=0.85)` with defaults otherwise (torch.compile and CUDA
 graphs on), then one `generate()` of 8 prompts x 512 random token ids -> 8 greedy tokens (`ignore_eos`), then 3 more
 calls of the same shape. **Scored metric: cold time to first result** = wall clock when the first `generate()`
@@ -44,35 +44,36 @@ fixed.
 
 ## Measuring
 
-The package is built and staged as `package/RUN.md` steps 1-4 describe (about 15-20 minutes from an empty
-directory). The harness scores a **venv**, named `37338_<name>` under `$STAGE/venvs/`, against the parent venv
-`37338_parent`. To make and score your own:
+You get a working directory (the *view*): the unmodified engine in a private venv, the benchmark, the load you are
+scored on, the model, and `dev_bench.sh`.
 
 ```
-cd package && . ./env.sh                                   # sets ISO_ROOT, STAGE, GPU, CPUS, PORT from site.env
-C=$STAGE/venvs/37338_mine; SP=$C/lib/python3.10/site-packages
-cp -al $STAGE/venvs/37338_parent $C                        # hard-linked copy of the unmodified tree
-# edit files under $SP/vllm/ (see the warning below), then byte-compile each edited file:
-$C/bin/python3 -I -m py_compile $SP/vllm/<edited file>.py
-touch $STAGE/.staged/venv_37338_mine                       # marks it as staged
-bash harness/run.sh mine1_g0 score mine                    # 1 warm-up, 3 pairs, teacher-forced check
-bash harness/run.sh try1_g0 quick mine                     # cheaper check (~5-8 min): 1 pair; not a score
+cd <view>
+cp -a venv venv_base                           # optional: an untouched copy for your own before/after timing
+# edit venv/lib/python3.10/site-packages/vllm/ in place; it is your copy and nothing else shares it
+venv/bin/python3 -I -m py_compile <edited files>   # catches syntax errors in seconds
+./dev_bench.sh                                 # one timed run of the scored load (loads/cal.env) on venv/: 3-4 min
+./dev_bench.sh --venv venv_base                # the same on the untouched copy
+./dev_bench.sh --load smoke                    # 1 rep, quicker
+./dev_bench.sh --load cor                      # the correctness pass's prompts (outputs under runs/)
 ```
 
-The copy shares every file with the parent venv. **Never write into a file in place**: that changes the baseline too.
-Replace the file instead (write a new file and `mv` it over the old name, or `cp f f.new && rm f && mv f.new f`
-before editing). Byte-compile every edited file before scoring: otherwise Python writes the new bytecode into your
-venv during the run, and the venv check fails. This is what `harness/mkvariant.sh` does for the shipped variants.
+`dev_bench.sh` runs the scorer's job environment (clean environment, CPU pinning, offline model, same compile caches
+and engine ports) and prints the scored metric (median rep, seconds), the reps and the output token counts. It
+compares against nothing: time your own baseline. The GPU must be idle.
 
-One scoring job takes about 24-27 minutes of GPU time: each run is a full cold start of about 3-4 minutes. The
-summary is printed at the end and written to `results/<label>/verdict.json`: the pairs, the speedup, each check, the
-first-batch ratios, and the verdict (`fail:<checks>`, `no_gain`, `below_ref`, `ties_ref`, `above_ref`). A cold start
-is mostly compilation on the CPU: give the job its own CPU set (`CPUS`) and keep the host quiet while it runs.
+Each run is a cold start: compile caches are emptied before and after, as in the scorer. Byte-compile each edited
+file before timing it, or your first run also pays for that.
+
+To submit, hand the operator your edited `venv/lib/python3.10/site-packages/vllm/` directory, or a unified diff
+against `venv_base`. Only `.py` files may differ from the unmodified tree. The operator scores it with the task's
+verifier: your tree is built into a fresh venv and timed against the unmodified tree in alternating runs, and the
+output checks above are applied. You do not run the verifier.
 
 ## Rules
 
 - Edit vLLM's Python source only (`.py` files under `vllm/` in your venv). No new GPU kernels, no other file types.
-- Do not change the benchmark, the loads, the harness or `harness/gate.json`, and do not change the engine arguments
-  or their defaults.
+- Do not change `bench/`, `loads/`, `dev_bench.sh` or anything else in the view except the engine package (the scorer
+  uses its own copies), and do not change the engine arguments or their defaults.
 - Do not consult upstream history or releases newer than commit `54ab804e`.
-- The GPU must be idle; the harness refuses to start, or aborts, if another process is on it.
+- The GPU must be idle when you run `dev_bench.sh`.

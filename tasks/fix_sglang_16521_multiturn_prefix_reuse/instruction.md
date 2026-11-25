@@ -7,7 +7,7 @@ repair it in SGLang's Python code.
 
 ## Scoring
 
-The job (`package/loads/cal.env`, run by the read-only benchmark in `package/bench/`) drives the offline
+The job (`loads/cal.env`, run by the read-only benchmark in `bench/`) drives the offline
 `sglang.Engine`. One rep is 64 conversations. Turn 1 sends 256 random token ids and generates 256 greedy tokens
 (`ignore_eos`). Turn 2 sends the turn-1 ids, the turn-1 output ids and 32 new ids, all 64 conversations in one
 `generate()` call, and generates 8 tokens. **Only turn 2's wall time is scored**: the median over 4 reps, each rep
@@ -32,33 +32,33 @@ fixed.
 
 ## Measuring
 
-The package is built and staged as `package/RUN.md` steps 1-4 describe (about 20-25 minutes from an empty
-directory). The harness scores a **venv**, named `16521_<name>` under `$STAGE/venvs/`, against the parent venv
-`16521_parent`. To make and score your own:
+You get a working directory (the *view*): the unmodified engine in a private venv, the benchmark, the load you are
+scored on, the model, and `dev_bench.sh`.
 
 ```
-cd package && . ./env.sh                                   # sets ISO_ROOT, STAGE, GPU, CPUS, PORT from site.env
-C=$STAGE/venvs/16521_mine
-cp -al $STAGE/venvs/16521_parent $C                        # hard-linked copy of the unmodified tree
-# edit files under $C/lib/python3.10/site-packages/sglang/ (see the warning below)
-touch $STAGE/.staged/venv_16521_mine                       # marks it as staged
-bash harness/run.sh mine1_g0 score mine                    # 2 warm-ups, 2 correctness passes, 3 pairs, teacher-forced check
+cd <view>
+cp -a venv venv_base                           # optional: an untouched copy for your own before/after timing
+# edit venv/lib/python3.10/site-packages/sglang/ in place; it is your copy and nothing else shares it
+venv/bin/python3 -I -m py_compile <edited files>   # catches syntax errors in seconds
+./dev_bench.sh                                 # one timed run of the scored load (loads/cal.env) on venv/: ~46 s
+./dev_bench.sh --venv venv_base                # the same on the untouched copy
+./dev_bench.sh --load smoke                    # 1 rep, quicker
+./dev_bench.sh --load cor                      # the correctness pass's prompts (outputs under runs/)
 ```
 
-The copy shares every file with the parent venv. **Never write into a file in place**: that changes the baseline too.
-Replace the file instead (write a new file and `mv` it over the old name, or `cp f f.new && rm f && mv f.new f`
-before editing), and delete the module's stale `__pycache__/*.pyc`. This is what `harness/mkvariant.sh` does for the
-shipped variants.
+`dev_bench.sh` runs the scorer's job environment (clean environment, CPU pinning, offline model, same compile caches
+and engine ports) and prints the scored metric (median rep, seconds), the reps and the output token counts. It
+compares against nothing: time your own baseline. The GPU must be idle.
 
-One scoring job takes about 9 minutes of GPU time. Each timed run is ~46 s, of which ~35 s is engine start-up and
-less than 2 s is the scored turn 2. The summary is printed at the end and written to `results/<label>/verdict.json`:
-the pairs, the speedup, each check, and the verdict (`fail:<checks>`, `no_gain`, `below_ref`, `ties_ref`,
-`above_ref`). `python3 -m compileall` on your edited files catches syntax errors in seconds.
+To submit, hand the operator your edited `venv/lib/python3.10/site-packages/sglang/` directory, or a unified diff
+against `venv_base`. Only `.py` files may differ from the unmodified tree. The operator scores it with the task's
+verifier: your tree is built into a fresh venv and timed against the unmodified tree in alternating runs, and the
+output checks above are applied. You do not run the verifier.
 
 ## Rules
 
 - Edit SGLang's Python code only (files under `sglang/` in your venv). No new CUDA, Triton or C++ code.
-- Do not change the benchmark, the loads, the harness or `harness/gate.json`, and do not change engine settings or
-  their defaults.
+- Do not change `bench/`, `loads/`, `dev_bench.sh` or anything else in the view except the engine package (the scorer
+  uses its own copies), and do not change engine settings or their defaults.
 - Do not consult upstream history or releases newer than commit `4262f525`.
-- The GPU must be idle; the harness refuses to start, or aborts, if another process is on it.
+- The GPU must be idle when you run `dev_bench.sh`.
