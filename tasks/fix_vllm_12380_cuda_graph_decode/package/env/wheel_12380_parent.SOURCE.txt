@@ -1,0 +1,5 @@
+pr=12380 role=parent commit=0e74d797ce8618fdb685126e0ff8576fb966e6ad
+url=https://wheels.vllm.ai/0e74d797ce8618fdb685126e0ff8576fb966e6ad/vllm-0.6.6.post2.dev364%2Bg0e74d797-cp38-abi3-manylinux1_x86_64.whl
+sha256=f9f542a35315939fa30fcb47f18860c34d0360550c328b9f4a5ce6222d4addaf
+version=0.6.6.post2.dev364+g0e74d797
+file=vllm-0.6.6.post2.dev364+g0e74d797-cp38-abi3-manylinux1_x86_64.whl

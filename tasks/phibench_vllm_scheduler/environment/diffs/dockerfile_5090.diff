@@ -1,0 +1,30 @@
+--- a/environment/Dockerfile	2026-11-21 15:16:18.936740253 +0400
++++ b/environment/Dockerfile.5090	2026-11-21 15:28:36.365646066 +0400
+@@ -47,9 +47,9 @@
+ #   (That version FROM'd a private vLLM-serving base, COPY'd pre-staged model weights from the
+ #    build context and injected an internal agent CLI; all three are removed here.)
+ # =============================================================================
+-FROM nvidia/cuda:12.6.2-devel-ubuntu22.04
++FROM nvidia/cuda:12.8.1-devel-ubuntu22.04
+ 
+-ARG TORCH_CUDA_ARCH_LIST="9.0"
++ARG TORCH_CUDA_ARCH_LIST="12.0"
+ ARG HF_ENDPOINT=https://huggingface.co
+ ARG MODEL_ID=Qwen/Qwen2.5-1.5B-Instruct
+ 
+@@ -75,13 +75,13 @@
+     LD_LIBRARY_PATH=/opt/kernelbench-venv/lib/python3.10/site-packages/torch/lib:/usr/local/cuda/lib64:/usr/local/nvidia/lib64
+ RUN pip install --no-cache-dir -U pip setuptools wheel
+ 
+-RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu126 \
++RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu128 \
+         "torch==2.7.1" "triton==3.3.1"
+ 
+ # ---- vLLM from the OFFICIAL PUBLIC WHEEL, WITH its dependencies. constraint pins torch/triton.
+ #      No `|| true`: a failed dependency install must fail the build.
+ RUN printf 'torch==2.7.1\ntriton==3.3.1\n' > /tmp/vllm-constraints.txt \
+- && pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu126 \
++ && pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cu128 \
+         --constraint /tmp/vllm-constraints.txt "vllm==0.10.1.1" "transformers>=4.55,<5" \
+  && python -c "import torch; assert torch.__version__.startswith('2.7.1'), torch.__version__; print('torch pin held:', torch.__version__)"
+ 

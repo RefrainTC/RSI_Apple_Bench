@@ -1,0 +1,41 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_vllm_16436_sampler_host_sync"
+description = "vllm serve (0.8.5.dev117, -O3) with Qwen2.5-1.5B-Instruct and its default generation config (repetition penalty 1.1) streams 100 requests at 1 request/s, and each decode step costs more than this GPU needs. Scored on the client-side median time per output token from vLLM's own bench serve client, against the unmodified tree in interleaved ABBA pairs on one RTX 4090. Outputs are checked against the parent with a near-tie tolerance; a TTFT guard stops time being moved out of TPOT."
+keywords = ["vllm", "optimization", "sampler", "host-sync", "serving", "tpot"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]
+allow_internet = false   # setup (package/RUN.md steps 2-4) downloads wheels, CPython and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "vLLM history"
+upstream_pr = "https://github.com/vllm-project/vllm/pull/16436"
+selected_from = "ISO-Bench list, screen batch 1"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/vllm-project/vllm.git"
+baseline_commit = "f728ab8e3578c22b42ed53e51b5e8ec35328d8b9"
+reference_fix_commit = "299ebb62b269ce167eb1c71b5e39a1dc1f65ce1c"
+engine_version = "vLLM 0.8.5.dev117 (V1 engine, per-commit wheels), torch 2.6.0+cu124"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+revision = "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "client-side median TPOT of vllm bench serve (100 random prompts, 1000 in / 100 out, 1 request/s, ignore_eos), parent / candidate; job speedup = median of 2 ABBA pairs"
+reference_speedup = 1.0855
+band_pct = 1.0
+aa_band_pct = 0.43
+gate = "kernel, locked-file and protected-setting gate; greedy correctness client (>= 90 % exact, near-ties <= 0.5 nats); every timed repeat: same completions and output lengths, no errors, >= 90 % identical texts; median TTFT <= 1.05 x paired parent; settings from the server log; audit hook; integrity manifests"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.0855, aa_max_pct = 0.43, jobs = 7, minutes_per_scoring = 19, note = "single calibration job reads 1.093; use the multi-job REF" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "not yet"
+report = "none; the authors' own empty-directory package test is summarised in README.md"

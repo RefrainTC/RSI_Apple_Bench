@@ -1,0 +1,42 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_sglang_20972_logprob_host_sync"
+description = "SGLang serving Qwen2.5-1.5B-Instruct with per-token logprobs and top-5 alternatives decodes more slowly than the GPU allows. Scored on the median wall time of one offline generate() call (8 requests x 128 prompt tokens -> 512 greedy tokens, return_logprob with top_logprobs_num 5) against the unmodified tree in interleaved pairs on one RTX 4090. Token ids and every returned logprob must equal the unmodified engine's."
+keywords = ["sglang", "optimization", "logprobs", "host-sync", "overlap-scheduler", "decode", "offline"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090", "RTX 5090"]
+allow_internet = false   # setup (package/RUN.md steps 2-4) downloads wheels, sources, CUDA pieces and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "SGLang history"
+upstream_pr = "https://github.com/sgl-project/sglang/pull/20972"
+selected_from = "mined fix list, batch 4"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/sgl-project/sglang.git"
+baseline_commit = "e2b8463c80367730db57d5c38c8835ab326ab468"
+reference_fix_commit = "a27651d5e0d138d2a5ddc529ee95317fd57328fa"
+engine_version = "SGLang source at the parent commit (2026-03, built from python/), torch 2.9.1+cu128, sglang-kernel 0.4.0, flashinfer 0.6.6"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+revision = "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median wall time of 5 generate() calls (8 x 128 -> 512 tokens, top-5 logprobs), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.142
+band_pct = 0.6
+aa_band_pct = 0.7
+gate = "exact: every timed rep's digest (ids, text, sampled-token and top-5 logprobs rounded to 1e-3) equals the parent's; token counts; live ServerArgs equal (ports aside); correctness pass on 24 fixed prompts sent as token ids, logprobs within 1e-3 nats"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.142, aa_max_pct = 0.65, jobs = 7, minutes_per_scoring = "9.4-10" }
+rtx5090 = { ref = 1.226, aa_max_pct = 0.72, jobs = 3, minutes_per_scoring = "9", note = "median of the three 5090 jobs; the 4090 band (0.6 %) is too tight there, a 5090 gate needs at least 1 %; package/harness/gate.json still holds the 4090 REF" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS"
+report = "docs/acceptance/batch4.md"

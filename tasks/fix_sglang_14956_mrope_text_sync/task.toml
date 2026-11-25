@@ -1,0 +1,42 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_sglang_14956_mrope_text_sync"
+description = "Decoding a batch of 64 text-only requests on Qwen2-VL-2B-Instruct (a vision-language model) with SGLang is slower than one RTX 4090 delivers. Scored on the median rep wall time of 64 requests x 128 random ids -> 256 greedy tokens in one call, against the unmodified tree in interleaved pairs on the same GPU. Outputs must be bit-identical: token counts, live ServerArgs, timed-rep digests and a 24-prompt text pass with logprobs. Same task family as fix_sglang_9460_mrope_decode_sync."
+keywords = ["sglang", "optimization", "host-sync", "decode", "multimodal-rope", "qwen2-vl", "overlap-scheduler", "offline"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]
+allow_internet = false   # setup (package/RUN.md steps 2-5) downloads sources, the lock, CUDA pieces and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "SGLang history"
+upstream_pr = "https://github.com/sgl-project/sglang/pull/14956"
+selected_from = "mined fix list, batch 5 (candidate C48, a batch-4 reserve)"
+package = "package/RUN.md"
+family = "fix_sglang_9460_mrope_decode_sync (SGLang #9460): the same function and the same kind of per-request GPU read; count the two as one family, not as independent evidence"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/sgl-project/sglang.git"
+baseline_commit = "a7a4b1755d1b6eb7b04925f8453647368c029487"
+reference_fix_commit = "69cfb17b9a5bfde2b6b150989159a2942ef21b89"
+engine_version = "SGLang 0.5.6.post2 (source tree at the parent commit, built from python/), torch 2.9.1+cu128 with cuDNN 9.10, sgl-kernel 0.3.19, flashinfer 0.5.3, triton 3.5.1, transformers 4.57.1, Python 3.10"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2-VL-2B-Instruct"
+revision = "1860c46f12b7449d0f5b426a7474ab715342bc65"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median rep wall time over 5 reps (64 text-only requests x 128 random ids -> 256 greedy tokens in one call), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.31
+band_pct = 2.0
+aa_band_pct = 2.0
+gate = "exact: output token counts, live ServerArgs (ports ignored), digest of every timed rep (ids + text), and a 24-prompt text pass (64 tokens with logprobs and top-5) identical to the same job's parent pass"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.31, aa_max_pct = 1.4, jobs = 4, minutes_per_scoring = 7.5 }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS"
+report = "docs/acceptance/batch4.md"

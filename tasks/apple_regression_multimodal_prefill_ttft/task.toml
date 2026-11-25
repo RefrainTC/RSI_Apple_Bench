@@ -1,0 +1,58 @@
+# Adapted from Apple's RSI-Inference-Bench task regression_multimodal_prefill_ttft (commit 1a38072f).
+# Apple's original carries this header:
+#   For licensing see accompanying LICENSE file.
+#   Copyright (C) 2026 Apple Inc. All Rights Reserved.
+# Apple's task files are under the Apple Sample Code License; they are not copied here. This file holds our
+# metadata only. Key names follow Apple's task.toml where they fit.
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/apple_regression_multimodal_prefill_ttft"
+description = "Apple's multimodal prefill task, run unchanged except for two serving flags on one RTX 4090 or one RTX 5090. Qwen3.5-4B on SGLang serves requests with 1, 2 or 4 JPEGs of random resolution, and time to first token is far higher than it should be. Score = geometric mean over three image shapes of pristine/candidate mean TTFT, with two guard shapes and a teacher-forced logprob check."
+keywords = ["sglang", "regression", "prefill", "latency", "multimodal", "triton", "apple"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090", "RTX 5090"]
+allow_internet = false   # setup downloads pinned inputs; scoring runs with HF offline
+
+[metadata.rsi_apple_bench]
+origin = "Apple RSI-Inference-Bench"
+apple_task = "tasks/regression_multimodal_prefill_ttft"
+apple_commit = "1a38072fbe284234c874356b86c9df666a5a79a3"
+apple_declared_gpu = "1x H100"
+upstream_pr = "https://github.com/sgl-project/sglang/pull/31558"
+selected_from = "Apple's 37 tasks, screened for 24-32 GB GPUs"
+package = "environment/scripts/ (no verified package; see README, How to run it)"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/sgl-project/sglang.git"
+baseline_commit = "01a96720c6f690ac00adeed94b762b193d8472cd"
+reference_fix_commit = "42a058c760c768ce37739109de6a430cce49cc51"   # the squash merge of PR #31558 (Apple's task.toml)
+engine_version = "sglang @01a96720 (python/ subtree, Apple's pristine digest 738a9d98...)"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen3.5-4B"
+revision = "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "geomean over img1/img2/img4 of pristine mean TTFT / candidate mean TTFT (Apple's verifier, unchanged)"
+reference_speedup_rtx4090 = 1.389     # mean of 4 oracle passes, local disk
+reference_speedup_rtx5090 = 1.551     # median of 6 oracle passes (5 ours + 1 acceptance), local NVMe
+apple_reference_speedup_h100 = 1.620  # declared by Apple; not comparable
+noise_floor = 1.03                    # Apple's; we suggest 1.05 on the 4090
+aa_band_pct_rtx4090 = 2.1             # largest A/A deviation seen (1.021)
+aa_band_pct_rtx5090 = 0.5             # largest A/A deviation seen (1.005)
+gate = "teacher-forced logprobs >= 95% within 0.05; replay guard >= 0.93 and text guard >= 0.95 (a guard fails only if below its floor in every round); Apple's pristine-tree digest"
+serve_flags_both_arms = { rtx4090 = "--attention-backend triton --mem-fraction-static 0.50", rtx5090 = "--attention-backend triton --mem-fraction-static 0.60" }
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.389, oracle_range = [1.373, 1.401], aa_max_pct = 2.1, jobs = 4, minutes_per_scoring = 27, peak_vram_gib = 23.7 }
+rtx5090 = { ref = 1.551, oracle_range = [1.542, 1.560], aa_max_pct = 0.53, jobs = 6, minutes_per_scoring = 19, peak_vram_mib = 28472 }
+
+[metadata.rsi_apple_bench.known_hole]
+summary = "An unfixed candidate that pre-compiles the scored kernel shapes at start-up earns up to 64% of the oracle's reward on the 4090 (31% on the 5090) with every voting check passing."
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS-with-fixes (RTX 4090 and RTX 5090)"
+report = "docs/acceptance/batch1.md"

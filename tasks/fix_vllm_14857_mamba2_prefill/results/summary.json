@@ -1,0 +1,53 @@
+{
+  "task": "fix_vllm_14857_mamba2_prefill",
+  "metric": "median wall time of 5 timed generate() calls (512 x 64 random tokens, 8 greedy tokens, Bamba-9B FP8, new prompts per call), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.0648,
+  "band_pct": 0.5,
+  "aa_band_pct": 0.33,
+  "gpus": {
+    "rtx4090": {
+      "jobs": null,
+      "jobs_note": "7 jobs: 4-GPU server GPU0 x2, GPU2 x2, GPU3 x1; 2-GPU server GPU0 x2 (1.0645, 1.0648); median 1.0648, range 1.0614-1.0656; the other per-job values are not itemized in the sources",
+      "n_jobs": 7,
+      "known_jobs": [1.0645, 1.0648],
+      "between_job_sd_pct": 0.14,
+      "calibration_ref": 1.063,
+      "calibration_pair_range": [1.0625, 1.0664],
+      "aa_max_pct": 0.33,
+      "median_rep_s": {"parent": "5.69-5.80", "fix": "5.34-5.45"},
+      "transfers": {"in_256_out_256": 1.020, "output_64": 1.019, "max_num_seqs_16": 1.033},
+      "peak_vram_mib": 22122,
+      "minutes_per_scoring": 9.5,
+      "minutes_calibration": 24.5
+    },
+    "rtx5090": {"runs": false, "reason": "torch 2.6.0+cu124 and vLLM kernels have no sm_120 code"}
+  },
+  "variants": [],
+  "variants_note": "no canaries or broken variants exist for this task",
+  "duplicate_iso14778": {
+    "upstream_pr": "https://github.com/vllm-project/vllm/pull/14778",
+    "load": "Bamba-9B architecture, dummy weights, first 16 of 32 layers, bf16; otherwise as above",
+    "reference_speedup": 1.0365,
+    "jobs_range": [1.0334, 1.0369],
+    "n_jobs": 5,
+    "between_job_sd_pct": 0.14,
+    "calibration_ref": 1.033,
+    "aa_max_pct": 0.31,
+    "band_pct": 0.5,
+    "transfers": {"in_256_out_256": 1.010, "output_64": 1.011, "max_num_seqs_16": 1.018},
+    "peak_vram_mib": 21166,
+    "minutes_per_scoring": 7,
+    "independent_acceptance": "not yet",
+    "authors_empty_dir_test": {"calibration_ref": 1.0337, "aa_max_pct": 0.20, "speedups": [1.0344]}
+  },
+  "acceptance": {
+    "verdict": "PASS-with-fixes",
+    "calibration_refs": [1.0643, 1.0647],
+    "speedups": [1.0649, 1.0681, 1.0638, 1.0628],
+    "all_jobs_median": 1.0645,
+    "aa_max_pct": 0.25,
+    "aa_note": "a second calibration on a host busy with other setups had one A/A pair at 1.28 (host stall)",
+    "transfers": {"in_256_out_256": 1.022, "output_64": 1.019, "max_num_seqs_16": 1.031},
+    "authors_empty_dir_test": {"calibration_ref": 1.0675, "aa_max_pct": 0.17, "speedups": [1.0621], "peak_vram_mib": 22122}
+  }
+}

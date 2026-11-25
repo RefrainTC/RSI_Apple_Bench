@@ -1,0 +1,42 @@
+{
+  "task": "fix_sglang_9460_mrope_decode_sync",
+  "metric": "median wall time of 5 generate() calls (64 requests x (224 px image + prompt) -> 256 tokens), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.203,
+  "band_pct": 1.5,
+  "aa_band_pct": 3.0,
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.1996, 1.2119, 1.2071, 1.1913, 1.2066, 1.2003, 1.2075, 1.1998],
+      "jobs_note": "4-GPU server: calibration (GPU2), scoring on GPU3, GPU3, GPU2, GPU1, GPU0, package test calibration and scoring (GPU1)",
+      "later_jobs": [1.1881, 1.1998, 1.2002],
+      "aa_max_pct": 1.9,
+      "between_job_sd_pct": 0.54,
+      "rep_s": {"parent": "4.07-4.31", "fix": "3.37-3.55"},
+      "peak_vram_gb": 21.1,
+      "minutes_per_scoring": "8-9",
+      "minutes_calibration": "21-23",
+      "second_server_screen_jobs": [1.199, 1.217],
+      "transfers": {"requests_32": 1.18, "text_only": 1.10}
+    },
+    "rtx5090": {
+      "runs": false,
+      "reason": "sgl-kernel 0.3.8 has no sm_120 code: RMSNorm 'no kernel image is available' in CUDA-graph capture"
+    }
+  },
+  "variants": [
+    {"name": "nodelta", "speedup": 1.20, "verdict": "fail:correct,tf"},
+    {"name": "offby1", "speedup": 1.22, "verdict": "fail:correct,tf (timed teacher-forced check blind; caught by the correctness pass)"},
+    {"name": "frozen", "speedup": 1.20, "verdict": "fail:correct,tf"},
+    {"name": "fp8kv", "speedup": 1.21, "verdict": "fail:correct,tf"},
+    {"name": "short", "speedup": 1.35, "verdict": "fail:counts"},
+    {"name": "lowres", "speedup": 0.74, "speedup_second_server": 1.28, "verdict": "fail:correct,tf", "note": "0.74 in one pair on the 4-GPU server (erratic candidate reps), 1.28 on the 2-GPU server in the independent test"}
+  ],
+  "acceptance": {
+    "verdict": "PASS",
+    "host": "second server (2-GPU server)",
+    "calibration_ref": [1.2143, 1.2139],
+    "aa_max_pct": 1.6,
+    "speedups": [1.1951, 1.2116, 1.1999],
+    "deviations": 0
+  }
+}

@@ -1,0 +1,4 @@
+vllm/_C.abi3.so
+vllm/_moe_C.abi3.so
+vllm/v1/spec_decode/ngram_proposer.py
+vllm/v1/worker/gpu_model_runner.py

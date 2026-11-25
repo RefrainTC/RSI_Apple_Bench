@@ -1,0 +1,59 @@
+{
+  "task": "fix_vllm_37338_cold_start_autotune",
+  "metric": "cold time to first result (process launch -> first generate() returned, all compile caches empty), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.29,
+  "band_pct": 2.0,
+  "aa_band_pct": 3.0,
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.2929, 1.2691, 1.2911, 1.2966, 1.2803, 1.2891, 1.2962, 1.2882, 1.2969, 1.2951],
+      "jobs_note": "4-GPU server: calibration (GPU2), scoring on GPU3, GPU3, GPU2, GPU0, GPU0, GPU0, GPU1, package test calibration and scoring (GPU2)",
+      "later_jobs": [1.3005, 1.3070],
+      "aa_max_pct": 2.5,
+      "aa_max_pct_note": "0.9 % in the authors' calibration; 2.5 % in the package test (one parent start-up 4 s slow)",
+      "between_job_sd_pct": "0.68-0.72",
+      "cold_time_s": {"parent": "208.9-218.4", "fix": "161.8-172.4"},
+      "first_batch_s": {"parent": "48.0-51.2", "fix": "1.11-1.40"},
+      "triton_kernels_per_cold_run": {"parent": 389, "fix": 289},
+      "peak_vram_gb": 21.5,
+      "minutes_per_scoring": "24-27",
+      "minutes_calibration": 78,
+      "second_server_screen_jobs_first_batch_ratio": [37.5, 34.5],
+      "transfers": {"first_batch_1x128": [1.29, 1.29], "first_batch_16x2048": [1.36, 1.29], "warm_caches": [0.87, 1.00]}
+    },
+    "rtx5090": {
+      "jobs": [1.176, 1.178, 1.183],
+      "jobs_note": "calibration, scoring 1, scoring 2; package unchanged; gate.json still holds the 4090 REF; the cold start is CPU-bound on that host (Ryzen 9 3950X)",
+      "ref": 1.178,
+      "aa_max_pct": 0.57,
+      "aa_scoring_job": 1.003,
+      "cold_time_s": {"parent": 320, "fix": 272},
+      "triton_kernels_per_cold_run": {"parent": 341, "fix": 253},
+      "peak_vram_gb": {"timed": 27.9, "teacher_forced": "29.1-30.1"},
+      "minutes_per_scoring": 36,
+      "minutes_calibration": 113,
+      "variants": [
+        {"name": "short1", "speedup": 1.175, "verdict": "fail:counts"}
+      ]
+    }
+  },
+  "variants": [
+    {"name": "shipcache", "speedup": 3.35, "verdict": "fail:audit,venv,cold"},
+    {"name": "persist (first job)", "speedup": 1.00, "verdict": "fail:audit,venv,cold"},
+    {"name": "persist (second job)", "speedup": 5.82, "verdict": "fail:audit,venv,cold"},
+    {"name": "persisttmp (first job)", "speedup": 1.00, "verdict": "fail:audit,cold"},
+    {"name": "persisttmp (second job)", "speedup": 5.83, "verdict": "fail:audit,cold"},
+    {"name": "short1", "speedup": 1.29, "verdict": "fail:counts"},
+    {"name": "noautotune (probe)", "speedup": 1.00, "verdict": "pass, no_gain"},
+    {"name": "gbf16 (probe)", "speedup": 1.29, "verdict": "pass (precision loss not visible on 8-token outputs; no speed gained)"}
+  ],
+  "acceptance": {
+    "verdict": "PASS",
+    "host": "second server (2-GPU server)",
+    "calibration_ref": 1.291,
+    "aa_max_pct": 4.25,
+    "aa_note": "one pair whose parent start-up was 8 s slower during the tester's own concurrent work; the other four pairs <= 0.95 %",
+    "speedups": [1.2829, 1.2915, 1.2926],
+    "deviations": 0
+  }
+}

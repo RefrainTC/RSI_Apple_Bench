@@ -1,0 +1,235 @@
+{
+ "ref_speedup": 1.0909101264039358,
+ "fix_pairs": {
+  "n": 5,
+  "median_speedup": 1.0909101264039358,
+  "min": 1.0870486036996538,
+  "max": 1.0962992685446311,
+  "values": [
+   1.0945,
+   1.087,
+   1.0909,
+   1.088,
+   1.0963
+  ],
+  "flagged_pairs": []
+ },
+ "aa": {
+  "n": 5,
+  "median_speedup": 0.9990179354283804,
+  "min": 0.9980648811968887,
+  "max": 1.001688148153107,
+  "values": [
+   1.0001,
+   0.9981,
+   1.0017,
+   0.999,
+   0.9984
+  ],
+  "flagged_pairs": [],
+  "max_abs_dev": 0.0019351188031112576
+ },
+ "noise_band": 0.0019351188031112576,
+ "overlay_equivalence_fixvenv_vs_parentvenv": {
+  "n": 1,
+  "median_speedup": 1.0875876257827435,
+  "min": 1.0875876257827435,
+  "max": 1.0875876257827435,
+  "values": [
+   1.0876
+  ],
+  "flagged_pairs": []
+ },
+ "storage": [
+  "tmp-nvme"
+ ],
+ "mixed_storage": false,
+ "cpus": [
+  "16-23,48-55"
+ ],
+ "cache_states": [
+  "cold",
+  "warm-in-job"
+ ],
+ "witness": {
+  "n": 20,
+  "median_residual_s": 0.01366049749776721,
+  "max_up_dev_s": 0.09411752922460437,
+  "max_down_dev_s": 2.8038829346187413,
+  "tolerance_s": 0.5,
+  "one_sided": true,
+  "residuals": [
+   0.033,
+   0.108,
+   0.038,
+   -0.139,
+   -0.048,
+   -0.002,
+   -2.79,
+   0.007,
+   -0.006,
+   0.062,
+   0.019,
+   0.037,
+   0.042,
+   0.054,
+   -0.076,
+   0.008,
+   -0.003,
+   0.081,
+   -0.136,
+   0.086
+  ]
+ },
+ "parent_settings": {
+  "frontend.spec_k": 3,
+  "frontend.ngram_min": 2,
+  "frontend.ngram_max": 4,
+  "frontend.enforce_eager": false,
+  "frontend.dtype": "torch.bfloat16",
+  "frontend.max_model_len": 4096,
+  "frontend.prefix_caching": true,
+  "frontend.gpu_memory_utilization": 0.8,
+  "frontend.max_num_seqs": 1024,
+  "frontend.max_num_batched_tokens": 8192,
+  "frontend.compilation_level": 3,
+  "core.spec": "SpeculativeConfig(draft_model='[ngram]', num_spec_tokens=3)",
+  "core.enforce_eager": "False",
+  "core.prefix_caching": "True",
+  "core.chunked_prefill": "True",
+  "core.compilation_level": "3",
+  "core.use_cudagraph": "true",
+  "core.dtype": "torch.bfloat16",
+  "core.graph_captured": true,
+  "core.torch_compiled": true,
+  "core.attn_backend": "Flash Attention",
+  "_required_ok": true
+ },
+ "parent_primary": {
+  "median": 1.3476274078711867,
+  "n": 15
+ },
+ "outcheck": {
+  "cal:parent_vs_parent": [
+   true,
+   true,
+   true,
+   true,
+   true
+  ],
+  "cal:fix_vs_parent": [
+   true,
+   true,
+   true,
+   true,
+   true
+  ],
+  "cal:fixvenv_vs_parentvenv": [
+   true
+  ]
+ },
+ "outcheck_detail": [
+  {
+   "pair": "01",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": false,
+   "identical_frac": 1.0
+  },
+  {
+   "pair": "02",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": false,
+   "identical_frac": 0.984375
+  },
+  {
+   "pair": "03",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": false,
+   "identical_frac": 0.984375
+  },
+  {
+   "pair": "04",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": false,
+   "identical_frac": 0.984375
+  },
+  {
+   "pair": "05",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "identical_frac": 1.0
+  },
+  {
+   "pair": "01",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "identical_frac": 1.0
+  },
+  {
+   "pair": "02",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": false,
+   "identical_frac": 0.984375
+  },
+  {
+   "pair": "03",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "identical_frac": 0.984375
+  },
+  {
+   "pair": "04",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": false,
+   "identical_frac": 0.984375
+  },
+  {
+   "pair": "05",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "identical_frac": 0.984375
+  },
+  {
+   "pair": "01",
+   "roles": "fixvenv_vs_parentvenv",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": false,
+   "identical_frac": 0.984375
+  }
+ ],
+ "fix_output_exact_min": 0.984375,
+ "out_min_exact_suggested": 0.884375,
+ "calibration_flags": [],
+ "audit_events_trusted_runs": {},
+ "outcheck_thresholds": {
+  "min_exact": 0.9533701018234618,
+  "min_same_inc": 0.9533701018234618,
+  "inc_tol": 0.0608150470219434,
+  "sampled_tol": 0.05,
+  "benign_min_exact": 0.984375,
+  "benign_min_same_inc": 0.984375,
+  "benign_max_tps_rel": 0.0202716823406478,
+  "n_runs": 22
+ }
+}

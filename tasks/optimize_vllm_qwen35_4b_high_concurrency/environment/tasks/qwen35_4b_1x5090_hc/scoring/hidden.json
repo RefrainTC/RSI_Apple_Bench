@@ -1,0 +1,273 @@
+{
+ "rounds": 2,
+ "workloads": [
+  {
+   "name": "hc_1024_64",
+   "input_len": 1024,
+   "output_len": 64,
+   "num_prompts": 512,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c128",
+     "concurrency": 128,
+     "num_prompts": 512
+    }
+   ],
+   "warmup": {
+    "num_prompts": 32,
+    "output_len": 16,
+    "concurrency": 32
+   }
+  },
+  {
+   "name": "hc_128_128",
+   "input_len": 128,
+   "output_len": 128,
+   "num_prompts": 1024,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c256",
+     "concurrency": 256,
+     "num_prompts": 1024
+    }
+   ],
+   "warmup": {
+    "num_prompts": 64,
+    "output_len": 16,
+    "concurrency": 64
+   }
+  },
+  {
+   "name": "hc_2048_256",
+   "input_len": 2048,
+   "output_len": 256,
+   "num_prompts": 256,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c64",
+     "concurrency": 64,
+     "num_prompts": 256
+    }
+   ],
+   "warmup": {
+    "num_prompts": 16,
+    "output_len": 16,
+    "concurrency": 16
+   }
+  }
+ ],
+ "perturbed": [
+  {
+   "name": "p_768_32",
+   "input_len": 768,
+   "output_len": 32,
+   "num_prompts": 512,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c96",
+     "concurrency": 96,
+     "num_prompts": 512
+    }
+   ],
+   "warmup": {
+    "num_prompts": 32,
+    "output_len": 16,
+    "concurrency": 32
+   },
+   "range_ratio": 0.5
+  },
+  {
+   "name": "p_256_192",
+   "input_len": 256,
+   "output_len": 192,
+   "num_prompts": 768,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c192",
+     "concurrency": 192,
+     "num_prompts": 768
+    }
+   ],
+   "warmup": {
+    "num_prompts": 64,
+    "output_len": 16,
+    "concurrency": 64
+   },
+   "range_ratio": 0.5
+  },
+  {
+   "name": "p_3072_128",
+   "input_len": 3072,
+   "output_len": 128,
+   "num_prompts": 192,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c48",
+     "concurrency": 48,
+     "num_prompts": 192
+    }
+   ],
+   "warmup": {
+    "num_prompts": 16,
+    "output_len": 16,
+    "concurrency": 16
+   },
+   "range_ratio": 0.5
+  }
+ ],
+ "cnt_hc": [
+  {
+   "name": "hc_1024_64",
+   "input_len": 1024,
+   "output_len": 64,
+   "num_prompts": 256,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c128",
+     "concurrency": 128,
+     "num_prompts": 256
+    }
+   ],
+   "warmup": {
+    "num_prompts": 32,
+    "output_len": 16,
+    "concurrency": 32
+   }
+  }
+ ],
+ "tiny": [
+  {
+   "name": "tiny",
+   "input_len": 128,
+   "output_len": 16,
+   "num_prompts": 16,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c16",
+     "concurrency": 16,
+     "num_prompts": 16
+    }
+   ],
+   "warmup": {
+    "num_prompts": 4,
+    "output_len": 4,
+    "concurrency": 4
+   }
+  }
+ ],
+ "canary": [
+  {
+   "name": "hc_1024_64",
+   "input_len": 1024,
+   "output_len": 64,
+   "num_prompts": 256,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c128",
+     "concurrency": 128,
+     "num_prompts": 256
+    }
+   ],
+   "warmup": {
+    "num_prompts": 32,
+    "output_len": 16,
+    "concurrency": 32
+   }
+  },
+  {
+   "name": "hc_128_128",
+   "input_len": 128,
+   "output_len": 128,
+   "num_prompts": 512,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c256",
+     "concurrency": 256,
+     "num_prompts": 512
+    }
+   ],
+   "warmup": {
+    "num_prompts": 64,
+    "output_len": 16,
+    "concurrency": 64
+   }
+  },
+  {
+   "name": "hc_2048_256",
+   "input_len": 2048,
+   "output_len": 256,
+   "num_prompts": 128,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c64",
+     "concurrency": 64,
+     "num_prompts": 128
+    }
+   ],
+   "warmup": {
+    "num_prompts": 16,
+    "output_len": 16,
+    "concurrency": 16
+   }
+  }
+ ],
+ "cnt_state": [
+  {
+   "name": "state",
+   "input_len": 64,
+   "output_len": 512,
+   "num_prompts": 144,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c16",
+     "concurrency": 16,
+     "num_prompts": 16
+    },
+    {
+     "name": "c48",
+     "concurrency": 48,
+     "num_prompts": 48
+    },
+    {
+     "name": "c96",
+     "concurrency": 96,
+     "num_prompts": 96
+    },
+    {
+     "name": "c144",
+     "concurrency": 144,
+     "num_prompts": 144
+    }
+   ],
+   "warmup": {
+    "num_prompts": 8,
+    "output_len": 16,
+    "concurrency": 8
+   }
+  }
+ ]
+}

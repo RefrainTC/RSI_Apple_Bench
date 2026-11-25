@@ -1,0 +1,3 @@
+{"task": "logprob", "lp_tol": 0.001, "ref": 1.142, "band": 0.006, "aa_band": 0.007,
+ "settings_ignore": ["port", "nccl_port"], "exact_outputs": true,
+ "note": "Set 2026-11-24 from 7 human-fix jobs on n1 GPU0/GPU1 (calibration + 4 scoring jobs + the package test's calibration and scoring job): REF = median 1.142, band = 2 SD = 0.60 %. The fix is bit-identical to the parent (ids and logprobs); lp_tol 1e-3 nats; see CARD_sgl20972.md."}

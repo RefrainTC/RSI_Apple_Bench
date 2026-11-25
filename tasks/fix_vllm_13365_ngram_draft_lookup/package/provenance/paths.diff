@@ -1,0 +1,475 @@
+--- authors/harness_iso13365/build_workspace.sh
++++ package/harness_iso13365/build_workspace.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -18 +19 @@
+-exec bash /home/coder/work/p2-port/harness_iso13365/dev_run_impl.sh $TD "\$@"
++exec bash $ISO_ROOT/harness_iso13365/dev_run_impl.sh $TD "\$@"
+--- authors/harness_iso13365/calibrate.sh
++++ package/harness_iso13365/calibrate.sh
+@@ -4,0 +5 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -6 +7 @@
+-TD=$(readlink -f "$1"); NAB=${2:-5}; NAA=${3:-5}; H=/home/coder/work/p2-port/harness_iso13365
++TD=$(readlink -f "$1"); NAB=${2:-5}; NAA=${3:-5}; H=$ISO_ROOT/harness_iso13365
+@@ -12 +13 @@
+-  export P2_CACHE_MODE=job P2_CACHE_ROOT=${P2T:-/tmp/p2}/cache/$TASK/job-calib-$(date +%s)
++  export P2_CACHE_MODE=job P2_CACHE_ROOT=$P2T/cache/$TASK/job-calib-$(date +%s)
+@@ -16 +17 @@
+-echo "$(date '+%F %T') CALIBRATE START storage=${P2_STORAGE:-nas} cpus=${P2_CPUS_OVERRIDE:-$(bash /home/coder/work/p2-port/scripts/p2_cpus.sh $GPU)} host=$(hostname) fresh_venv=${P2_FRESH_VENV:-0} audit=${AUDIT:-0}" >> $LOG
++echo "$(date '+%F %T') CALIBRATE START storage=${P2_STORAGE:-nas} cpus=${P2_CPUS_OVERRIDE:-$(bash $ISO_ROOT/scripts/p2_cpus.sh $GPU)} host=$(hostname) fresh_venv=${P2_FRESH_VENV:-0} audit=${AUDIT:-0}" >> $LOG
+--- authors/harness_iso13365/dev_run_impl.sh
++++ package/harness_iso13365/dev_run_impl.sh
+@@ -7,0 +8 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -13,2 +14,2 @@
+-  exec env -i P2_DEV_CLEAN=1 HOME="${HOME:-/home/coder}" USER=coder LANG=C.UTF-8 \
+-    PATH=/home/coder/miniconda3/bin:/usr/local/bin:/usr/bin:/bin bash "$0" "$@"
++  exec env -i P2_DEV_CLEAN=1 HOME="${HOME:-/tmp}" USER=coder LANG=C.UTF-8 ISO_ROOT="$ISO_ROOT" P2T="$P2T" HOST_PY_BIN="$HOST_PY_BIN" P2_CPUS_OVERRIDE="$P2_CPUS_OVERRIDE" CPUS="$CPUS" PORT="$PORT" UV="$UV" \
++    PATH=$HOST_PY_BIN:/usr/local/bin:/usr/bin:/bin bash "$0" "$@"
+@@ -16 +17 @@
+-TD=$(readlink -f "$1"); shift; H=/home/coder/work/p2-port/harness_iso13365
++TD=$(readlink -f "$1"); shift; H=$ISO_ROOT/harness_iso13365
+@@ -44 +45 @@
+-  ( flock -w 3600 9 || exit 3; bash $H/run_variant.sh "$TD" "$1" "$S/stage" "p2d_${TASK}_${ID}_$1_$3" "$2" "$3" ${TASK_DEV_ENV:-} "${WL[@]}" ) 9>"${P2T:-/tmp/p2}/locks/iso13365_gpu$GPU.lock"
++  ( flock -w 3600 9 || exit 3; bash $H/run_variant.sh "$TD" "$1" "$S/stage" "p2d_${TASK}_${ID}_$1_$3" "$2" "$3" ${TASK_DEV_ENV:-} "${WL[@]}" ) 9>"$P2T/locks/iso13365_gpu$GPU.lock"
+@@ -46 +47 @@
+-mkdir -p /home/coder/work/p2-port/locks
++mkdir -p $ISO_ROOT/locks
+--- authors/harness_iso13365/gate_selftest.sh
++++ package/harness_iso13365/gate_selftest.sh
+@@ -3 +3,2 @@
+-TD=$(readlink -f "$1"); H=/home/coder/work/p2-port/harness_iso13365; W=/home/coder/work/p2-port/smoke/selftest_$(basename $TD)
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
++TD=$(readlink -f "$1"); H=$ISO_ROOT/harness_iso13365; W=$ISO_ROOT/smoke/selftest_$(basename $TD)
+--- authors/harness_iso13365/integrity.sh
++++ package/harness_iso13365/integrity.sh
+@@ -16,0 +17 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -18 +19 @@
+-OP=$1; TD=$(readlink -f "$2"); PHASE=${3:-manual}; P2=/home/coder/work/p2-port; H=$P2/harness_iso13365
++OP=$1; TD=$(readlink -f "$2"); PHASE=${3:-manual}; P2=$ISO_ROOT; H=$P2/harness_iso13365
+@@ -32 +33 @@
+-    sha256sum /home/coder/work/cpu_pinning_main.txt; }   # (iso13365: n1 CPUs are set in task.env, which is hashed above) | LC_ALL=C sort -k2
++    sha256sum $ISO_ROOT/cpu_pinning_main.txt; }   # (iso13365: n1 CPUs are set in task.env, which is hashed above) | LC_ALL=C sort -k2
+@@ -48 +49 @@
+-  grep -h '^home = ' "$VENV/pyvenv.cfg" "$FIX_VENV/pyvenv.cfg" | sed "s|${P2T:-/tmp/p2}/|<P2T>/|" > "$MD/pyvenv_home.txt"
++  grep -h '^home = ' "$VENV/pyvenv.cfg" "$FIX_VENV/pyvenv.cfg" | sed "s|$P2T/|<P2T>/|" > "$MD/pyvenv_home.txt"
+@@ -64 +65 @@
+-  diff <(grep -h '^home = ' "$VENV/pyvenv.cfg" "$FIX_VENV/pyvenv.cfg" | sed "s|${P2T:-/tmp/p2}/|<P2T>/|") "$MD/pyvenv_home.txt" > /dev/null || ok=0   # iso13365: host-neutral (main /tmp/p2, n1 /tmp/ag13365)
++  diff <(grep -h '^home = ' "$VENV/pyvenv.cfg" "$FIX_VENV/pyvenv.cfg" | sed "s|$P2T/|<P2T>/|") "$MD/pyvenv_home.txt" > /dev/null || ok=0   # iso13365: host-neutral (main $P2T, n1 /tmp/ag13365)
+--- authors/harness_iso13365/make_canaries.sh
++++ package/harness_iso13365/make_canaries.sh
+@@ -20,0 +21 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -22 +23 @@
+-TD=$(readlink -f "$1"); OR=$2; H=/home/coder/work/p2-port/harness_iso13365
++TD=$(readlink -f "$1"); OR=$2; H=$ISO_ROOT/harness_iso13365
+@@ -92 +93 @@
+-    C7g) printf '\n_REF_FILE = "/home/coder/work/p2-port/tasks/iso7822/calib/out_ref.json"\n' >> $V/__init__.py ;;
++    C7g) printf '\n_REF_FILE = "%s/tasks/iso7822/calib/out_ref.json"\n' "$ISO_ROOT" >> $V/__init__.py ;;
+--- authors/harness_iso13365/p2_job.sh
++++ package/harness_iso13365/p2_job.sh
+@@ -9 +9 @@
+-#      the per-GPU row of /home/coder/work/cpu_pinning_main.txt), JOB_TIMEOUT (s, default 1800), EXTRA_ENV ("K=V K=V"), P2_PYTHONPATH (prepended overlay root),
++#      the per-GPU row of $ISO_ROOT/cpu_pinning_main.txt), JOB_TIMEOUT (s, default 1800), EXTRA_ENV ("K=V K=V"), P2_PYTHONPATH (prepended overlay root),
+@@ -11,0 +12 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -14,2 +15,2 @@
+-P2=/home/coder/work/p2-port; T5=${T5:-/home/coder/work/rsi/t5-isobench}; CPUS=${P2_CPUS_OVERRIDE:-$(bash $P2/scripts/p2_cpus.sh $GPU)} || exit 1   # always the pinning table (callers' CPUS ignored)
+-SCR=${P2_SCRATCH_ROOT:-$P2/scratch}/$TAG   # P2_SCRATCH_ROOT=/tmp/p2/scratch when the task is staged on local NVMe
++P2=$ISO_ROOT; T5=${T5:-$ISO_ROOT}; CPUS=${P2_CPUS_OVERRIDE:-$(bash $P2/scripts/p2_cpus.sh $GPU)} || exit 1   # always the pinning table (callers' CPUS ignored)
++SCR=${P2_SCRATCH_ROOT:-$P2/scratch}/$TAG   # P2_SCRATCH_ROOT=$P2T/scratch when the task is staged on local NVMe
+--- authors/harness_iso13365/pairs.py
++++ package/harness_iso13365/pairs.py
+@@ -17 +17 @@
+-H = "/home/coder/work/p2-port/harness_iso13365"
++H = os.path.dirname(os.path.abspath(__file__))  # package: the harness dir itself
+--- authors/harness_iso13365/recorrect.sh
++++ package/harness_iso13365/recorrect.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-TD=$(readlink -f "$1"); H=/home/coder/work/p2-port/harness_iso13365
++TD=$(readlink -f "$1"); H=$ISO_ROOT/harness_iso13365
+--- authors/harness_iso13365/remote_dev_entry.sh
++++ package/harness_iso13365/remote_dev_entry.sh
+@@ -12,0 +13 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -14 +15 @@
+-P2=/home/coder/work/p2-port; H=$P2/harness_iso13365
++P2=$ISO_ROOT; H=$P2/harness_iso13365
+--- authors/harness_iso13365/remote_score_entry.sh
++++ package/harness_iso13365/remote_score_entry.sh
+@@ -4,0 +5 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -6 +7 @@
+-P2=/home/coder/work/p2-port; H=$P2/harness_iso13365
++P2=$ISO_ROOT; H=$P2/harness_iso13365
+--- authors/harness_iso13365/remote_score_finish.sh
++++ package/harness_iso13365/remote_score_finish.sh
+@@ -6,0 +7 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -8 +9 @@
+-P2=/home/coder/work/p2-port; H=$P2/harness_iso13365
++P2=$ISO_ROOT; H=$P2/harness_iso13365
+--- authors/harness_iso13365/run_variant.sh
++++ package/harness_iso13365/run_variant.sh
+@@ -7,0 +8 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -10 +11 @@
+-P2=/home/coder/work/p2-port; H=$P2/harness_iso13365; T5=${T5:-/home/coder/work/rsi/t5-isobench}
++P2=$ISO_ROOT; H=$P2/harness_iso13365; T5=${T5:-$ISO_ROOT}
+@@ -13 +14 @@
+-# A staged task refuses to run when /tmp/p2 was wiped (pod restart) instead of silently falling back to the NAS.
++# A staged task refuses to run when $P2T was wiped (pod restart) instead of silently falling back to the NAS.
+@@ -17 +18 @@
+-P2T=${P2T:-/tmp/p2}
++P2T=$P2T
+@@ -19 +20 @@
+-[ -e /home/coder/work/p2-port/STOP_iso13365 ] && { echo "[run_variant] STOP_iso13365 present: not started"; exit 8; }
++[ -e $ISO_ROOT/STOP_iso13365 ] && { echo "[run_variant] STOP_iso13365 present: not started"; exit 8; }
+@@ -69 +70 @@
+-  AUD="$AUD P2_AUDIT_PROTECT_W=$P2:$T5:$P2T/venvs:$P2T/hf:$P2T/uvpy:$P2T/run:/home/coder/work/rsi:/home/coder/work/cpu_pinning_main.txt"
++  AUD="$AUD P2_AUDIT_PROTECT_W=$P2:$T5:$P2T/venvs:$P2T/hf:$P2T/uvpy:$P2T/run:$ISO_ROOT:$ISO_ROOT/cpu_pinning_main.txt"
+@@ -76 +77 @@
+-  AUD="$AUD P2_AUDIT_PROTECT_R=$P2:$T5:$P2T:/home/coder P2_AUDIT_ALLOW_R=$SCR${CD:+:$CD}${MASTER:+:$MASTER}:${HF_HOME_TASK:-$T5/hf}:$P2T/uvpy P2_AUDIT_TASKDIR=$TD"
++  AUD="$AUD P2_AUDIT_PROTECT_R=$P2:$T5:$P2T:$HOME P2_AUDIT_ALLOW_R=$SCR${CD:+:$CD}${MASTER:+:$MASTER}:${HF_HOME_TASK:-$T5/hf}:$P2T/uvpy P2_AUDIT_TASKDIR=$TD"
+--- authors/harness_iso13365/score.sh
++++ package/harness_iso13365/score.sh
+@@ -16,0 +17 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -18 +19 @@
+-TD=$(readlink -f "$1"); L=$2; WS=${3:-$TD/workspace}; TR=${4:-}; H=/home/coder/work/p2-port/harness_iso13365
++TD=$(readlink -f "$1"); L=$2; WS=${3:-$TD/workspace}; TR=${4:-}; H=$ISO_ROOT/harness_iso13365
+@@ -25 +26 @@
+-  export P2_CACHE_MODE=job P2_CACHE_ROOT=${P2T:-/tmp/p2}/cache/$TASK/job-$L-$(date +%s)
++  export P2_CACHE_MODE=job P2_CACHE_ROOT=$P2T/cache/$TASK/job-$L-$(date +%s)
+@@ -35,2 +36,3 @@
+-mkdir -p ${P2T:-/tmp/p2}/locks
+-exec 9>"${P2T:-/tmp/p2}/locks/iso13365_gpu$GPU.lock"   # iso13365 copy: host-local lock (main and n1 share the NFS tree); flock -w 7200 9 || { echo "lock timeout"; exit 3; }
++mkdir -p $P2T/locks
++exec 9>"$P2T/locks/iso13365_gpu$GPU.lock"   # iso13365 copy: host-local lock (main and n1 share the NFS tree)
++flock -w 7200 9 || { echo "lock timeout"; exit 3; }   # package (acceptance fix): this flock was commented out by accident
+--- authors/harness_iso13365/score_phase2.sh
++++ package/harness_iso13365/score_phase2.sh
+@@ -5,0 +6 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -7 +8 @@
+-TD=$(readlink -f "$1"); L=$2; H=/home/coder/work/p2-port/harness_iso13365; R=$TD/results/$L; LOG=$R/score.log
++TD=$(readlink -f "$1"); L=$2; H=$ISO_ROOT/harness_iso13365; R=$TD/results/$L; LOG=$R/score.log
+@@ -23 +24 @@
+-sys.path.insert(0, "/home/coder/work/p2-port/harness_iso13365"); import audit_check as AC
++sys.path.insert(0, os.path.join(os.environ["ISO_ROOT"], "harness_iso13365")); import audit_check as AC
+--- authors/harness_iso13365/snapshot_gate.sh
++++ package/harness_iso13365/snapshot_gate.sh
+@@ -4,0 +5 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -6 +7 @@
+-TD=$(readlink -f "$1"); WS=$(readlink -f "$2"); D=$3; H=/home/coder/work/p2-port/harness_iso13365
++TD=$(readlink -f "$1"); WS=$(readlink -f "$2"); D=$3; H=$ISO_ROOT/harness_iso13365
+--- authors/harness_iso13365/vault.sh
++++ package/harness_iso13365/vault.sh
+@@ -6 +6 @@
+-#                p2-port, t5-isobench or /tmp/p2; typically calib/, results/, staging/, remote_in|out/, the smoke
++#                p2-port, t5-isobench or $P2T; typically calib/, results/, staging/, remote_in|out/, the smoke
+@@ -16,0 +17 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -18 +19 @@
+-OP=$1; TD=$(readlink -f "$2"); P2=/home/coder/work/p2-port; T5=/home/coder/work/rsi/t5-isobench
++OP=$1; TD=$(readlink -f "$2"); P2=$ISO_ROOT; T5=$ISO_ROOT
+@@ -31 +32 @@
+-      case "$p" in /home/coder/work/p2-port/*|/home/coder/work/rsi/t5-isobench/*|/tmp/p2/*) ;; *) echo "vault: refusing path outside our trees: $p"; exit 2;; esac
++      case "$p" in $ISO_ROOT/*|$ISO_ROOT/*|$P2T/*) ;; *) echo "vault: refusing path outside our trees: $p"; exit 2;; esac
+--- authors/harness_iso13365/venv_guard.sh
++++ package/harness_iso13365/venv_guard.sh
+@@ -3 +3 @@
+-# The job never runs from the staged master: it runs from a per-GPU copy (<run venv>, /tmp/p2/run/g<gpu>/<name>).
++# The job never runs from the staged master: it runs from a per-GPU copy (<run venv>, $P2T/run/g<gpu>/<name>).
+@@ -11,0 +12 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+--- authors/ops_iso13365/aa.sh
++++ package/ops_iso13365/aa.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/calib.sh
++++ package/ops_iso13365/calib.sh
+@@ -2,0 +3 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -4 +5 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/calib_report.py
++++ package/ops_iso13365/calib_report.py
+@@ -9 +9 @@
+-    S = json.loads(subprocess.check_output(["python3", "-I", "/home/coder/work/p2-port/harness_iso13365/summarize.py", td, rd]))
++    S = json.loads(subprocess.check_output(["python3", "-I", os.path.join(os.environ["ISO_ROOT"], "harness_iso13365", "summarize.py"), td, rd]))
+--- authors/ops_iso13365/collect.sh
++++ package/ops_iso13365/collect.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-P2=/home/coder/work/p2-port; TD=$P2/tasks/iso13365; O=$P2/ops_iso13365
++P2=$ISO_ROOT; TD=$P2/tasks/iso13365; O=$P2/ops_iso13365
+@@ -7 +8 @@
+-L=$(mktemp -p /tmp/p2/tmp) ; trap 'rm -f $L' EXIT
++L=$(mktemp -p $P2T/tmp) ; trap 'rm -f $L' EXIT
+--- authors/ops_iso13365/common.sh
++++ package/ops_iso13365/common.sh
+@@ -2 +2,2 @@
+-P2=/home/coder/work/p2-port; H=$P2/harness_iso13365; TD=$P2/tasks/iso13365; OPS=$P2/ops_iso13365
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
++P2=$ISO_ROOT; H=$P2/harness_iso13365; TD=$P2/tasks/iso13365; OPS=$P2/ops_iso13365
+--- authors/ops_iso13365/final_report.sh
++++ package/ops_iso13365/final_report.sh
+@@ -3 +3,2 @@
+-P2=/home/coder/work/p2-port; TD=$P2/tasks/iso13365; O=$P2/ops_iso13365
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
++P2=$ISO_ROOT; TD=$P2/tasks/iso13365; O=$P2/ops_iso13365
+--- authors/ops_iso13365/main_queue.sh
++++ package/ops_iso13365/main_queue.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/main_queue2.sh
++++ package/ops_iso13365/main_queue2.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/make_canaries.sh
++++ package/ops_iso13365/make_canaries.sh
+@@ -7,0 +8 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -9 +10 @@
+-TD=/home/coder/work/p2-port/tasks/iso13365; O=$TD/canaries; mkdir -p $O
++TD=$ISO_ROOT/tasks/iso13365; O=$TD/canaries; mkdir -p $O
+--- authors/ops_iso13365/make_canaries2.sh
++++ package/ops_iso13365/make_canaries2.sh
+@@ -5,0 +6 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -7 +8 @@
+-TD=/home/coder/work/p2-port/tasks/iso13365; O=$TD/canaries; mkdir -p $O
++TD=$ISO_ROOT/tasks/iso13365; O=$TD/canaries; mkdir -p $O
+--- authors/ops_iso13365/n1_check.sh
++++ package/ops_iso13365/n1_check.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+@@ -8 +9 @@
+-[ "$P2T" = /tmp/ag13365 ] || { log "n1_check: not on n1 (P2T=$P2T)"; exit 2; }
++[ "$P2T" = $P2T ] || { log "n1_check: not on n1 (P2T=$P2T)"; exit 2; }
+--- authors/ops_iso13365/n1_queue.sh
++++ package/ops_iso13365/n1_queue.sh
+@@ -2,0 +3 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -4 +5 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/n1_queue2.sh
++++ package/ops_iso13365/n1_queue2.sh
+@@ -2,0 +3 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -4 +5 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/n1_queue3.sh
++++ package/ops_iso13365/n1_queue3.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/n1_queue4.sh
++++ package/ops_iso13365/n1_queue4.sh
+@@ -2,0 +3 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -4 +5 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+@@ -8 +9 @@
+-C=/home/coder/work/p2-port/tasks/iso13365/canaries
++C=$ISO_ROOT/tasks/iso13365/canaries
+--- authors/ops_iso13365/n1_venv_clean.sh
++++ package/ops_iso13365/n1_venv_clean.sh
+@@ -4 +4,2 @@
+-M=/home/coder/work/p2-port/tasks/iso13365/manifest
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
++M=$ISO_ROOT/tasks/iso13365/manifest
+@@ -7 +8 @@
+-  n=${p%%:*}; v=/tmp/ag13365/venvs/${p#*:}
++  n=${p%%:*}; v=$P2T/venvs/${p#*:}
+@@ -20 +21 @@
+-bash /home/coder/work/p2-port/ops_iso13365/n1_venv_verify.sh | grep diff_lines
++bash $ISO_ROOT/ops_iso13365/n1_venv_verify.sh | grep diff_lines
+--- authors/ops_iso13365/n1_venv_verify.sh
++++ package/ops_iso13365/n1_venv_verify.sh
+@@ -3 +3,2 @@
+-M=/home/coder/work/p2-port/tasks/iso13365/manifest
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
++M=$ISO_ROOT/tasks/iso13365/manifest
+@@ -7,2 +8,2 @@
+-  d=$(diff <(hashlist /tmp/ag13365/venvs/$v .) $M/$n.sha256 | grep -c '^[<>]')
+-  echo "$n ($v): diff_lines=$d"; [ "$d" = 0 ] || diff <(hashlist /tmp/ag13365/venvs/$v .) $M/$n.sha256 | head -10
++  d=$(diff <(hashlist $P2T/venvs/$v .) $M/$n.sha256 | grep -c '^[<>]')
++  echo "$n ($v): diff_lines=$d"; [ "$d" = 0 ] || diff <(hashlist $P2T/venvs/$v .) $M/$n.sha256 | head -10
+--- authors/ops_iso13365/score_fix.sh
++++ package/ops_iso13365/score_fix.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/score_ws.sh
++++ package/ops_iso13365/score_ws.sh
+@@ -2,0 +3 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -4 +5 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/setup_main.sh
++++ package/ops_iso13365/setup_main.sh
+@@ -4 +4 @@
+-#  2. stage it to /tmp/p2/venvs (shared stage_tmp.sh, unchanged), import check
++#  2. stage it to $P2T/venvs (shared stage_tmp.sh, unchanged), import check
+@@ -5,0 +6 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -7,2 +8,2 @@
+-P2=/home/coder/work/p2-port; V=$P2/venvs; H=$P2/harness_iso13365; TD=$P2/tasks/iso13365; OPS=$P2/ops_iso13365
+-mkdir -p /tmp/p2/tmp && chmod 700 /tmp/p2/tmp
++P2=$ISO_ROOT; V=$P2/venvs; H=$P2/harness_iso13365; TD=$P2/tasks/iso13365; OPS=$P2/ops_iso13365
++mkdir -p $P2T/tmp && chmod 700 $P2T/tmp
+@@ -19,2 +20,2 @@
+-/tmp/p2/venvs/13365_base/bin/python3 -I -c "import numba, llvmlite, numpy, vllm; print('base import ok', numba.__version__, llvmlite.__version__, numpy.__version__, vllm.__version__)" || exit 1
+-/tmp/p2/venvs/13365_base/bin/python3 -I -c "import vllm.v1.spec_decode.ngram_proposer as m, inspect; print('parent proposer has numba:', 'numba' in inspect.getsource(m))"
++$P2T/venvs/13365_base/bin/python3 -I -c "import numba, llvmlite, numpy, vllm; print('base import ok', numba.__version__, llvmlite.__version__, numpy.__version__, vllm.__version__)" || exit 1
++$P2T/venvs/13365_base/bin/python3 -I -c "import vllm.v1.spec_decode.ngram_proposer as m, inspect; print('parent proposer has numba:', 'numba' in inspect.getsource(m))"
+--- authors/ops_iso13365/smoke.sh
++++ package/ops_iso13365/smoke.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/stage_n1.sh
++++ package/ops_iso13365/stage_n1.sh
+@@ -2 +2 @@
+-# stage_n1.sh (iso13365 copy of scripts/stage_tmp.sh with the root as STAGE_ROOT, for n1 /tmp/ag13365) <item> ... : copy re-creatable inputs from the NAS (/home/coder, NFS) to the pod's local NVMe under /tmp/p2.
++# stage_n1.sh (iso13365 copy of scripts/stage_tmp.sh with the root as STAGE_ROOT, for n1 /tmp/ag13365) <item> ... : copy re-creatable inputs from the NAS (/home/coder, NFS) to the pod's local NVMe under $P2T.
+@@ -5,2 +5,2 @@
+-#   py                 uv CPython 3.10 (the venvs' base interpreter + stdlib)        -> /tmp/p2/uvpy/
+-#   venv:<src dir>     a venv; relocated: bin/python -> /tmp copy of the interpreter,  -> /tmp/p2/venvs/<basename>
++#   py                 uv CPython 3.10 (the venvs' base interpreter + stdlib)        -> $P2T/uvpy/
++#   venv:<src dir>     a venv; relocated: bin/python -> /tmp copy of the interpreter,  -> $P2T/venvs/<basename>
+@@ -9 +9 @@
+-#   hf:<org/name>      one HF hub model dir from $T5/hf                                 -> /tmp/p2/hf/hub/
++#   hf:<org/name>      one HF hub model dir from $T5/hf                                 -> $P2T/hf/hub/
+@@ -11 +11,2 @@
+-# Marker per item: /tmp/p2/.staged/<name> (source, counts, time). Jobs refuse to use an item without its marker.
++# Marker per item: $P2T/.staged/<name> (source, counts, time). Jobs refuse to use an item without its marker.
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -13,2 +14,2 @@
+-D=${STAGE_ROOT:?set STAGE_ROOT}; T5=/home/coder/work/rsi/t5-isobench
+-PYSRC=/home/coder/work/rsi/.uv-python/cpython-3.10.20-linux-x86_64-gnu; PYDST=$D/uvpy/cpython-3.10.20-linux-x86_64-gnu
++D=${STAGE_ROOT:?set STAGE_ROOT}; T5=$ISO_ROOT
++PYSRC=$ISO_ROOT/.uv-python/cpython-3.10.20-linux-x86_64-gnu; PYDST=$D/uvpy/cpython-3.10.20-linux-x86_64-gnu
+--- authors/ops_iso13365/transfer.sh
++++ package/ops_iso13365/transfer.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/transfer2.sh
++++ package/ops_iso13365/transfer2.sh
+@@ -3,0 +4 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -5 +6 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/v2_main.sh
++++ package/ops_iso13365/v2_main.sh
+@@ -4,0 +5 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -6 +7 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/ops_iso13365/v2_n1.sh
++++ package/ops_iso13365/v2_n1.sh
+@@ -2,0 +3 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -4 +5 @@
+-source /home/coder/work/p2-port/ops_iso13365/common.sh
++source $ISO_ROOT/ops_iso13365/common.sh
+--- authors/screen/setup_prs.sh
++++ package/screen/setup_prs.sh
+@@ -7,0 +8 @@
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -9 +10 @@
+-R=/home/coder/work/rsi; P2=/home/coder/work/p2-port; S=$P2/screen
++R=$ISO_ROOT; P2=$ISO_ROOT; S=$P2/screen
+@@ -11 +12 @@
+-UV=$HOME/.local/bin/uv; SYSPY=/home/coder/miniconda3/bin/python3; PY=$($UV python find 3.10)
++UV=${UV:-uv}; SYSPY=$HOST_PY_BIN/python3; PY=$($UV python find 3.10)
+--- authors/scripts/p2_cpus.sh
++++ package/scripts/p2_cpus.sh
+@@ -1,0 +2,3 @@
++# package: CPUS from env.sh (exported as P2_CPUS_OVERRIDE) wins; the authors' table below is used only when it is unset.
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
++[ -n "${P2_CPUS_OVERRIDE:-}" ] && { echo "$P2_CPUS_OVERRIDE"; exit 0; }
+@@ -4 +7 @@
+-T=/home/coder/work/cpu_pinning_main.txt
++T=$ISO_ROOT/cpu_pinning_main.txt
+--- authors/scripts/stage_tmp.sh
++++ package/scripts/stage_tmp.sh
+@@ -2 +2 @@
+-# stage_tmp.sh <item> ... : copy re-creatable inputs from the NAS (/home/coder, NFS) to the pod's local NVMe under /tmp/p2.
++# stage_tmp.sh <item> ... : copy re-creatable inputs from the NAS (/home/coder, NFS) to the pod's local NVMe under $P2T.
+@@ -5,2 +5,2 @@
+-#   py                 uv CPython 3.10 (the venvs' base interpreter + stdlib)        -> /tmp/p2/uvpy/
+-#   venv:<src dir>     a venv; relocated: bin/python -> /tmp copy of the interpreter,  -> /tmp/p2/venvs/<basename>
++#   py                 uv CPython 3.10 (the venvs' base interpreter + stdlib)        -> $P2T/uvpy/
++#   venv:<src dir>     a venv; relocated: bin/python -> /tmp copy of the interpreter,  -> $P2T/venvs/<basename>
+@@ -9 +9 @@
+-#   hf:<org/name>      one HF hub model dir from $T5/hf                                 -> /tmp/p2/hf/hub/
++#   hf:<org/name>      one HF hub model dir from $T5/hf                                 -> $P2T/hf/hub/
+@@ -11 +11,2 @@
+-# Marker per item: /tmp/p2/.staged/<name> (source, counts, time). Jobs refuse to use an item without its marker.
++# Marker per item: $P2T/.staged/<name> (source, counts, time). Jobs refuse to use an item without its marker.
++[ -n "${ISO_ENV_DONE:-}" ] || . "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../env.sh"   # package: machine settings
+@@ -13,2 +14,2 @@
+-D=/tmp/p2; T5=/home/coder/work/rsi/t5-isobench
+-PYSRC=/home/coder/work/rsi/.uv-python/cpython-3.10.20-linux-x86_64-gnu; PYDST=$D/uvpy/cpython-3.10.20-linux-x86_64-gnu
++D=$P2T; T5=$ISO_ROOT
++PYSRC=$ISO_ROOT/.uv-python/cpython-3.10.20-linux-x86_64-gnu; PYDST=$D/uvpy/cpython-3.10.20-linux-x86_64-gnu
+@@ -58 +59,4 @@
+-            copy "$T5/hf/hub/$dn" "$D/hf/hub/$dn" "hf_$dn" || rc=1 ;;
++            copy "$T5/hf/hub/$dn" "$D/hf/hub/$dn" "hf_$dn" || rc=1
++            # package (acceptance fix): transformers writes hub/version.txt ("1") on its first start; pre-create it so the
++            # first job on a newly staged machine is not voided by a write_protected audit event
++            [ -f "$D/hf/hub/version.txt" ] || printf 1 > "$D/hf/hub/version.txt" ;;
+--- authors/tasks/iso13365/task.env
++++ package/tasks/iso13365/task.env
+@@ -7,5 +7,3 @@
+-# iso12380 job's, the host's other user was seen on CCD1/CCD2). Local NVMe root: main /tmp/p2 (shared, staged), n1 /tmp/ag13365.
+-case "$(hostname)" in
+-  gpu-pod-n1-*) export P2T=/tmp/ag13365 P2_CPUS_OVERRIDE=24-31,56-63 ;;
+-  *)           export P2T=/tmp/p2 ;;
+-esac
++# iso12380 job's, the host's other user was seen on CCD1/CCD2). Local NVMe root: main $P2T (shared, staged), n1 /tmp/ag13365.
++# package: P2T (your STAGE) and the CPU list (CPUS -> P2_CPUS_OVERRIDE) come from env.sh. The authors switched here by
++# host name: main pod P2T=/tmp/p2 with its pinning table; n1 pod P2T=/tmp/ag13365, P2_CPUS_OVERRIDE=24-31,56-63.
+@@ -19 +17 @@
+-TASK_ENV=""
++TASK_ENV="VLLM_PORT=${PORT:-47000}"   # package: per-GPU port from env.sh (authors: "", vLLM picks a free port)
+@@ -34,0 +33,2 @@
++# package: the staged interpreter path is $P2T/uvpy/... (regex-escaped below)
++_P2T_RE=$(printf '%s' "$P2T" | sed 's/[][\\.^$*+?(){}|]/\\&/g')

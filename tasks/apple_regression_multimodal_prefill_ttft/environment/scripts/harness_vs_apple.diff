@@ -1,0 +1,52 @@
+diff -ru inputs/task/tests/_bench_rounds.py scripts/harness/_bench_rounds.py
+--- inputs/task/tests/_bench_rounds.py	2026-11-18 11:29:22.000000000 +0000
++++ scripts/harness/_bench_rounds.py	2026-11-20 07:52:07.000000000 +0000
+@@ -95,6 +95,13 @@
+     raw_dir.mkdir(parents=True, exist_ok=True)
+     cmd = [sys.executable, str(runner), mode, "--repo", str(repo), "--raw-dir", str(raw_dir),
+            "--workloads", workloads]
++    # [local adaptation] shared-GPU box: take the GPU lock per runner invocation (one engine
++    # session), and apply the per-bench timeout only after the lock is held.
++    lock = os.environ.get("MM_GPU_LOCK")
++    if lock:
++        cap = os.environ.get("MM_BENCH_TIMEOUT_SEC", "1500")
++        cmd = ["flock", lock, "timeout", "-k", "60", cap] + cmd
++        timeout = None
+     log = raw_dir / "_runner.log"
+     try:
+         with log.open("w", encoding="utf-8") as handle:
+diff -ru inputs/task/tests/_candidate_runner.py scripts/harness/_candidate_runner.py
+--- inputs/task/tests/_candidate_runner.py	2026-11-18 11:29:22.000000000 +0000
++++ scripts/harness/_candidate_runner.py	2018-05-02 03:52:57.135939965 +0000
+@@ -153,7 +153,7 @@
+         "--random-seed", "1234",
+         "--trust-remote-code",
+         "--log-level", "warning",
+-    ]
++    ] + os.environ.get("MM_EXTRA_SERVE_ARGS", "").split()  # [local adaptation] hardware-forced flags, same for both arms
+ 
+ 
+ def _client_argv(python: str, client_py: Path, base_url: str, tokenizer: str, wl: dict, seed: int,
+@@ -417,7 +417,10 @@
+     while time.time() < deadline:
+         try:
+             out = subprocess.run(
+-                ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
++                ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"]
++                # [local adaptation] 2-GPU box: look only at the GPU this run uses (nvidia-smi ignores
++                # CUDA_VISIBLE_DEVICES; without --id a job on the other GPU makes every boot wait 180 s).
++                + ([f"--id={os.environ['CUDA_VISIBLE_DEVICES']}"] if os.environ.get("CUDA_VISIBLE_DEVICES") else []),
+                 capture_output=True, text=True, timeout=30).stdout
+             last = max(int(v.strip()) for v in out.split() if v.strip().isdigit())
+         except (OSError, ValueError, subprocess.SubprocessError):
+@@ -571,7 +574,9 @@
+ 
+     env = dict(os.environ)
+     env["PYTHONPATH"] = f"{repo}:{env.get('PYTHONPATH', '')}".rstrip(":")
+-    for key in ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "TRITON_CACHE_DIR",
++    # [local adaptation] keep HF_HUB_OFFLINE / TRANSFORMERS_OFFLINE (the original image has no
++    # internet at all; here the box is online, so offline mode is what reproduces that).
++    for key in ("TRITON_CACHE_DIR",
+                 "TORCHINDUCTOR_CACHE_DIR", "CUDA_CACHE_PATH"):
+         env.pop(key, None)
+     client_env = dict(os.environ)

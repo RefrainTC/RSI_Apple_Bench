@@ -1,0 +1,2 @@
+{"lp_tol": 0.001, "ref": 1.037, "band": 0.01, "aa_band": 0.01, "settings_ignore": ["cache_config.num_gpu_blocks"],
+ "note": "final 2026-11-25 02:35 UTC: ref = median of 5 fix jobs (calibrations GPU1 1.0378 and GPU0 empty-directory 1.0361; scoring GPU2 1.0393, GPU3 1.0364, GPU0 empty-directory 1.0362) = 1.0364, rounded 1.037; between-job SD 0.14 %; band 1 % (floor), aa_band 1 % (A/A up to 0.44 %); num_gpu_blocks varies run to run with the memory profile; exact output gate; candidate runs start from a copy of the parent's compile cache; see CARD_vllm35442.md"}

@@ -1,0 +1,15 @@
+diff --color -r -x __pycache__ h/_stream_client.py hnl/_stream_client.py
+219a220,223
+> # [local adaptation, edit 4] natural-language floor-probe prompt (see make_harness_nl.py)
+> _LOCAL_FLOOR_PROMPT = 'The water cycle describes how water moves between the oceans, the air and the land. Heat from the sun evaporates water from seas and lakes; the vapour rises, cools and condenses into clouds. When the droplets grow heavy enough they fall as rain or snow, which feeds rivers, soaks into the ground and eventually flows back to the sea. Along the way, plants take up water through their roots and release it through their leaves.'
+> 
+> 
+279c283
+<             record = asyncio.run(floor_probe(args.base_url, prompts[0][:400], tokenizer,
+---
+>             record = asyncio.run(floor_probe(args.base_url, _LOCAL_FLOOR_PROMPT, tokenizer,
+diff --color -r -x __pycache__ h/workloads.json hnl/workloads.json
+73c73
+<   "_local_adaptation": "LOCAL ADAPTATION: tp_size 4 -> 1 on every point (gpt-oss-20b on 1x RTX 4090 instead of gpt-oss-120b on 4xB200). Shapes, roles, guard bands unchanged."
+---
+>   "_local_adaptation": "LOCAL ADAPTATION: tp_size 4 -> 1 on every point (Qwen2.5-1.5B-Instruct on 1x RTX 4090 instead of gpt-oss-120b on 4xB200). Shapes, roles, guard bands unchanged."

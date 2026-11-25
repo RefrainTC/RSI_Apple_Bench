@@ -1,0 +1,5 @@
+harness_iso14930 = copy of p2-port/harness made 2026-11-24T08:00:21+00:00
+- every path to harness/ points to harness_iso14930/
+- integrity.sh hashes harness_iso14930/
+- score.sh: STAGE:<dir> mode (operator only) scores a prepared stage with the gate bypassed (human-written PR Triton, canaries on it)
+- run_variant.sh: exits 8 when p2-port/STOP_iso14930 exists (checked before every GPU job)

@@ -1,0 +1,5 @@
+pr=13365 role=fix commit=4c822298981a8f7521492075ff72659985fc4c3f
+url=https://wheels.vllm.ai/4c822298981a8f7521492075ff72659985fc4c3f/vllm-0.7.3.dev216%2Bg4c822298-cp38-abi3-manylinux1_x86_64.whl
+sha256=45d18518b360753aec1dea57c15ea8d5a024c4b7ba0d0852dd1aa66f284aadb3
+version=0.7.3.dev216+g4c822298
+file=vllm-0.7.3.dev216+g4c822298-cp38-abi3-manylinux1_x86_64.whl

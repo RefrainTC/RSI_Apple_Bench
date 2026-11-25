@@ -1,0 +1,6 @@
+# iso12380 pinning (2026-11-24). Both pods: Threadripper PRO 5975WX, 4 CCDs (L3 0: 0-7,32-39 ...), SMT sibling = k+32.
+# main GPU0 = CCD0, as in /home/coder/work/cpu_pinning_main.txt. n1 GPU0 = CCD0 (idle when checked 07:50 UTC; the host's
+# other user's processes were seen on CPUs 10 and 25, i.e. CCD1 and CCD3).
+# host gpu cpus
+main 0 0-7,32-39
+n1 0 0-7,32-39

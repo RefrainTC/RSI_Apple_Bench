@@ -1,0 +1,41 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_vllm_7822_prefix_caching"
+description = "Offline vLLM 0.5.5 with automatic prefix caching serves 100 requests that share a ~645-token prefix on Llama-3-8B-Instruct-FP8, and the first pass over them (empty prefix cache) is slower than it needs to be. Scored on the wall time of that first generate() call, against the unmodified tree in interleaved ABBA pairs on one RTX 4090. Outputs are checked against the parent with a near-tie tolerance calibrated on the human fix, plus a separate greedy logprob check."
+keywords = ["vllm", "optimization", "prefix-caching", "block-manager", "offline", "fp8"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]
+allow_internet = false   # setup (package/RUN.md steps 2-4) downloads wheels, CPython and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "vLLM history"
+upstream_pr = "https://github.com/vllm-project/vllm/pull/7822"
+selected_from = "ISO-Bench list, screen batch 1"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/vllm-project/vllm.git"
+baseline_commit = "029c71de11bc3bcf84a1b3cf9d91e79ab6949799"
+reference_fix_commit = "2deb029d115dadd012ce5ea70487a207cb025493"
+engine_version = "vLLM 0.5.5 (V0 engine, per-commit wheels), torch 2.4.0+cu121, vllm-flash-attn 2.6.1"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "RedHatAI/Meta-Llama-3-8B-Instruct-FP8"
+revision = "c5c6b5700a4178ef1fdae2ae37827382b90eb400"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "wall time of the first generate() pass (100 shared-prefix requests, 200 tokens each, empty prefix cache), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.479
+band_pct = 0.5
+aa_band_pct = 0.16
+gate = "kernel and locked-file gate; every scored request exactly 200 tokens, same text when ids match, divergence only at calibrated near-ties (<= 0.8125 nats, >= 19 % exact, median first divergence >= step 10); greedy logprob correctness run; settings readback; GPU-busy witness; audit hook; integrity manifests"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.479, aa_max_pct = 0.16, jobs = 6, minutes_per_scoring = 4.7, note = "second 4090 server: 4 jobs, median 1.4727 (-0.43 %)" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "not yet"
+report = "none; the authors' own empty-directory package test is summarised in README.md"

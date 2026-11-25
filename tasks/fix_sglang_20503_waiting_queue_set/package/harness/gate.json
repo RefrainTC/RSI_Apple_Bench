@@ -1,0 +1,2 @@
+{"lp_tol": 0.001, "ref": 1.08, "band": 0.04, "aa_band": 0.03, "settings_ignore": ["port", "nccl_port"],
+ "note": "final 2026-11-25 06:15 UTC: ref = median of 5 fix jobs on main (calibrations GPU3 1.083 and GPU2 empty-directory 1.086; scoring GPU3 1.068 and 1.078, GPU2 empty-directory 1.087) = 1.083, rounded 1.08; between-job SD 0.8 %; band 4 % (single pairs 1.035-1.119); aa_band 3 % (A/A max 2.06 % GPU3, 2.97 % GPU2); exact output gate; see CARD_sgl20503.md"}

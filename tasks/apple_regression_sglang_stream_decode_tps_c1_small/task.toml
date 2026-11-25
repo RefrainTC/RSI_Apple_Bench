@@ -1,0 +1,58 @@
+# Adapted from Apple's RSI-Inference-Bench task regression_sglang_stream_decode_tps_c1 (commit 1a38072f).
+# Apple's original carries this header:
+#   For licensing see accompanying LICENSE file.
+#   Copyright (C) 2026 Apple Inc. All Rights Reserved.
+# Apple's task files are under the Apple Sample Code License; they are not copied here. This file holds our
+# metadata only. Key names follow Apple's task.toml where they fit.
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/apple_regression_sglang_stream_decode_tps_c1_small"
+description = "Apple's streaming-decode task scaled down from gpt-oss-120b on 4x B200 to Qwen2.5-1.5B-Instruct on one GPU. SGLang streams completions at concurrency 1 and 4 more slowly than the GPU allows. Score = geometric mean over three streamed shapes of candidate/pristine generated tokens per second, with a c16 throughput guard, a TTFT guard, a greedy output digest and a min-new-tokens floor probe."
+keywords = ["sglang", "regression", "decode", "streaming", "runtime", "host-sync", "apple", "adapted"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090", "RTX 5090"]
+allow_internet = false   # setup downloads pinned inputs; scoring needs no network
+
+[metadata.rsi_apple_bench]
+origin = "Apple RSI-Inference-Bench (adapted: smaller model, 1 GPU, 2 verifier edits)"
+apple_task = "tasks/regression_sglang_stream_decode_tps_c1"
+apple_commit = "1a38072fbe284234c874356b86c9df666a5a79a3"
+apple_declared_gpu = "4x B200, TP=4, openai/gpt-oss-120b"
+upstream_pr = "https://github.com/sgl-project/sglang/pull/28363"   # names the penalizer repair; the hunk itself is absent from its merged diff
+regression_pr = "https://github.com/sgl-project/sglang/pull/26380"  # the pinned tree is this PR's merge commit
+selected_from = "Apple's 37 tasks, screened for 24-32 GB GPUs"
+package = "environment/scripts/ (no verified package; see README, How to run it)"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/sgl-project/sglang.git"
+baseline_commit = "163b97012707d712e141e7ee486b72e2b0d8e60d"
+reference_fix_commit = "none: Apple's task-local patch solution/min_new_tokens_no_host_sync.patch"
+engine_version = "sglang @163b9701 (python/ subtree, checked against Apple's pristine digest)"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+revision = "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+apple_model = "openai/gpt-oss-120b"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "geomean over in1000_out1000_n5_c1, in1000_out2000_n3_c1, in1000_out1000_n8_c4 (streamed) of candidate/pristine output tokens per second (Apple's verifier code)"
+reference_speedup_rtx4090 = 1.1448     # edits 1-5 (harness_sc); 1.142-1.146 with edits 1-4
+reference_speedup_rtx5090_variant_F = 1.224
+reference_speedup_rtx5090_variant_T = 1.194
+apple_reference_speedup_b200 = 1.398   # not comparable
+noise_floor = 1.03
+aa_band_pct_rtx4090 = 0.22
+aa_band_pct_rtx5090 = 0.83
+gate = "c16 throughput guard >= 0.95, ttft_c1 guard >= 0.90; greedy output digest equal on both trees; min-new-tokens floor probe enforced and released on the candidate; Apple's pristine digest"
+serve_flags_both_arms = { rtx4090 = "--mem-fraction-static 0.80", rtx5090_T = "--mem-fraction-static 0.60 --attention-backend triton --sampling-backend pytorch", rtx5090_F = "--mem-fraction-static 0.60 (CUDA 12.9.1 nvcc for FlashInfer JIT)" }
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.1448, oracle_range = [1.1411, 1.1462], aa_max_pct = 0.22, jobs = 4, minutes_per_scoring = 20, peak_vram_mib = 21268 }
+rtx5090 = { ref_variant_F = 1.224, ref_variant_T = 1.194, aa_max_pct = 0.83, jobs = 6, minutes_per_scoring = 17, peak_vram_gb = 21.5 }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS-with-fixes (RTX 4090); RTX 5090 not independently tested"
+report = "docs/acceptance/batch1.md"

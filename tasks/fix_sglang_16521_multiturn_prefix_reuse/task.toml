@@ -1,0 +1,42 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_sglang_16521_multiturn_prefix_reuse"
+description = "Two-turn chat on SGLang with Qwen2.5-1.5B-Instruct: the second turn resends the first turn's prompt and the model's answer, and that second turn takes several times longer than it needs to. Scored on the median wall time of the 64 second-turn requests, against the unmodified tree in interleaved pairs on one RTX 4090. Outputs are checked by token counts, settings readback and a teacher-forced re-read by the unmodified engine with a bf16-noise tolerance."
+keywords = ["sglang", "optimization", "multi-turn", "prefix-cache", "prefill", "offline"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090", "RTX 5090"]
+allow_internet = false   # setup (package/RUN.md steps 2-4) downloads wheels, sources, CUDA pieces and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "SGLang history"
+upstream_pr = "https://github.com/sgl-project/sglang/pull/16521"
+selected_from = "mined fix list, batch 4"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/sgl-project/sglang.git"
+baseline_commit = "4262f5259b94c5c08779efff5017c0a6235bcb5f"
+reference_fix_commit = "2bfab1bb67460af8b125d94ca4c5ab0040c12cd2"
+engine_version = "SGLang source at the parent commit (2026-02, built from python/), torch 2.9.1+cu128, sgl-kernel 0.3.21, flashinfer 0.6.2"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+revision = "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median turn-2 wall time over 4 reps (64 conversations per rep), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 3.827
+band_pct = 1.26
+aa_band_pct = 1.0
+gate = "token counts per turn equal the parent's; live ServerArgs equal the parent's (ports aside); teacher-forced re-read by the parent: every token within 0.5 nats of the top-1 and at most 1 % of tokens per turn below the top-1, on timed runs and on a text correctness pass"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 3.827, aa_max_pct = 0.61, jobs = 8, minutes_per_scoring = "8.6-8.9" }
+rtx5090 = { ref = 3.524, aa_max_pct = 0.53, jobs = 3, minutes_per_scoring = "8.5", note = "median of the three 5090 jobs; package/harness/gate.json still holds the 4090 REF" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS"
+report = "docs/acceptance/batch4.md"

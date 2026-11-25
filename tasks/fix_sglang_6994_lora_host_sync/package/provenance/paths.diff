@@ -1,0 +1,172 @@
+--- authors/scripts/stage_tmp.sh
++++ package/scripts/stage_tmp.sh
+@@ -10,8 +10,8 @@
+ # After each copy: file count + byte total must match the source, else the item is removed and the script fails.
+ # Marker per item: /tmp/p2/.staged/<name> (source, counts, time). Jobs refuse to use an item without its marker.
+ set -uo pipefail
+-D=/tmp/p2; T5=/home/coder/work/rsi/t5-isobench
+-PYSRC=/home/coder/work/rsi/.uv-python/cpython-3.10.20-linux-x86_64-gnu; PYDST=$D/uvpy/cpython-3.10.20-linux-x86_64-gnu
++. "$(dirname "$(readlink -f "$0")")/../env.sh"; D=$STAGE; T5=$ISO_ROOT
++PYSRC=$ISO_ROOT/.uv-python/cpython-3.10.20-linux-x86_64-gnu; PYDST=$D/uvpy/cpython-3.10.20-linux-x86_64-gnu
+ mkdir -p $D/venvs $D/hf/hub $D/uvpy $D/cache $D/scratch $D/overlays $D/.staged
+ LOG=$D/stage.log
+ # entries + file bytes; pyvenv.cfg is excluded because relocation rewrites its home line (and nothing else)
+--- authors/b3/bench/run_b3.sh
++++ package/b3/bench/run_b3.sh
+@@ -1,4 +1,4 @@
+ #!/bin/bash
+ # run_b3.sh <out> <mode> : run the PR's bench ($BENCH from the env file) in the role's venv (PATH set by b3_job.sh).
+-OUT=$1; B=/home/coder/work/p2-port/b3/bench
++OUT=$1; B=$P2/b3/bench
+ cd "$OUT" && exec env ${OFFLINE_ENV:-} python3 -I $B/${BENCH:-offline_b3.py} "$OUT"
+--- authors/b3/scripts/b3_job.sh
++++ package/b3/scripts/b3_job.sh
+@@ -11,8 +11,8 @@
+ # exit: cmd rc; 3 = GPU busy before start; 4 = foreign GPU process appeared; 5 = own VRAM watchdog; 7 = timeout
+ set -uo pipefail
+ TAG=$1; GPU=$2; VENV=$3; OUT=$4; shift 5
+-P2=/home/coder/work/p2-port; T5=${T5:-/home/coder/work/rsi/t5-isobench}; CPUS=$(bash $P2/b3/scripts/b3_cpus.sh $GPU) || exit 1   # always the pinning table (callers' CPUS ignored)
+-SCR=${P2_SCRATCH_ROOT:-/tmp/p2/b3/scratch}/$TAG   # P2_SCRATCH_ROOT=/tmp/p2/scratch when the task is staged on local NVMe
++. "$(dirname "$(readlink -f "$0")")/../../env.sh"; P2=$ISO_ROOT; T5=${T5:-$ISO_ROOT}; CPUS=$(bash $P2/b3/scripts/b3_cpus.sh $GPU) || exit 1   # always the pinning table (callers' CPUS ignored)
++SCR=${P2_SCRATCH_ROOT:-$STAGE/b3/scratch}/$TAG   # P2_SCRATCH_ROOT=/tmp/p2/scratch when the task is staged on local NVMe
+ UUID=$(nvidia-smi --query-gpu=uuid --format=csv,noheader -i "$GPU")
+ MINOR=$(nvidia-smi -q -i "$GPU" | awk -F': ' '/Minor Number/{gsub(/ /,"",$2);print $2}')
+ TOTAL=$(nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits -i "$GPU"); WATCH_MIB=$(( TOTAL * ${WATCH_FRAC:-92} / 100 ))
+@@ -34,7 +34,7 @@
+ SAMPLER=$!
+ START=$(date +%s.%N)
+ ( cd "$SCR/cwd" && exec env -i HOME="$SCR/home" TMPDIR="$SCR/tmp" USER=coder LANG=C.UTF-8 LC_ALL=C.UTF-8 \
+-    PATH="$VENV/bin:/usr/bin:/bin" VIRTUAL_ENV="$VENV" T5="$T5" P2="$P2" \
++    PATH="$VENV/bin:/usr/bin:/bin" VIRTUAL_ENV="$VENV" T5="$T5" P2="$P2" STAGE="$STAGE" \
+     HF_HOME="${HF_HOME_OVERRIDE:-$T5/hf}" HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 \
+     VLLM_NO_USAGE_STATS=1 DO_NOT_TRACK=1 CUDA_VISIBLE_DEVICES="$GPU" CUDA_DEVICE_ORDER=PCI_BUS_ID R4_TAG="$TAG" \
+     ${P2_PYTHONPATH:+P2_OVERLAY=$P2_PYTHONPATH} ${EXTRA_ENV:-} taskset -c "$CPUS" "$@" ) > "$OUT/job_stdout.log" 2>&1 &
+--- authors/b3/scripts/b3_cpus.sh
++++ package/b3/scripts/b3_cpus.sh
+@@ -2,9 +2,10 @@
+ # b3_cpus.sh <gpu> : taskset CPU list for GPU <gpu> on THIS pod (batch 3). One CCD per GPU (5975WX on both pods; SMT
+ # sibling = k+32). main: as /home/coder/work/cpu_pinning_main.txt. n1: GPU0 = CCD0 (as harness_iso12380), GPU1 = CCD3 (as
+ # harness_iso13365 used on n1 GPU1).
+-HT=$(bash /home/coder/work/p2-port/b3/scripts/hosttag.sh)
++[ -n "${CPUS:-}" ] && { echo "$CPUS"; exit 0; }   # package: an explicit CPUS wins
++HT=$(bash "$(dirname "$(readlink -f "$0")")/hosttag.sh")
+ case "$HT:$1" in
+   main:0) echo 0-7,32-39;; main:1) echo 8-15,40-47;; main:2) echo 16-23,48-55;; main:3) echo 24-31,56-63;;
+   n1:0) echo 0-7,32-39;; n1:1) echo 24-31,56-63;;
+-  *) echo "b3_cpus: no row for $HT gpu $1" >&2; exit 1;;
++  *) taskset -pc $$ | sed 's/.*: //';;   # package: any other machine: this shell's CPU affinity (no pinning)
+ esac
+--- authors/b3/scripts/b3_stage.sh
++++ package/b3/scripts/b3_stage.sh
+@@ -4,9 +4,9 @@
+ # Items: venv:<src dir> -> /tmp/p2/b3/venvs/<basename> (relocated to /tmp/p2/uvpy); hf:<org/name> -> /tmp/p2/b3/hf/hub
+ # (source: b3/hf/hub, else the T5 hub). Idempotent; marker per item in /tmp/p2/b3/.staged.
+ set -uo pipefail
+-D=/tmp/p2/b3; B3=/home/coder/work/p2-port/b3; T5=/home/coder/work/rsi/t5-isobench
+-PYDST=/tmp/p2/uvpy/cpython-3.10.20-linux-x86_64-gnu
+-[ -f /tmp/p2/.staged/py ] && [ -x $PYDST/bin/python3.10 ] || { echo "no staged interpreter at $PYDST"; exit 1; }
++. "$(dirname "$(readlink -f "$0")")/../../env.sh"; D=$STAGE/b3; B3=$ISO_ROOT/b3; T5=$ISO_ROOT
++PYDST=$STAGE/uvpy/cpython-3.10.20-linux-x86_64-gnu
++[ -f $STAGE/.staged/py ] && [ -x $PYDST/bin/python3.10 ] || { echo "no staged interpreter at $PYDST"; exit 1; }
+ mkdir -p $D/venvs $D/hf/hub $D/cache $D/scratch $D/.staged; LOG=$D/stage.log
+ sig() { find "$1" \( -type f -o -type l \) ! -name pyvenv.cfg -printf '%y %s\n' | awk '{n++; if ($1 == "f") b += $2} END {printf "%d %.0f\n", n, b}'; }
+ copy() {
+--- authors/b3/scripts/setup_sgl.sh
++++ package/b3/scripts/setup_sgl.sh
+@@ -4,9 +4,9 @@
+ # pyproject.toml; nothing from the tree is run otherwise). Parent venv = python/[srt] at the parent commit, deps as of merge
+ # date + 2 days; fix venv = the same, pinned to the parent's freeze. Markers b3/setup/done_<pr> / failed_<pr>.
+ set -uo pipefail
+-R=/home/coder/work/rsi; P2=/home/coder/work/p2-port; B3=$P2/b3; S=$B3/setup
+-export UV_PYTHON_INSTALL_DIR=$R/.uv-python UV_PYTHON_BIN_DIR=$R/.uv-bin UV_CACHE_DIR=$P2/.uv-cache
+-UV=$HOME/.local/bin/uv; PY=$($UV python find 3.10)
++. "$(dirname "$(readlink -f "$0")")/../../env.sh"; R=$ISO_ROOT; P2=$ISO_ROOT; B3=$P2/b3; S=$B3/setup
++export UV_PYTHON_INSTALL_DIR=$R/.uv-python UV_PYTHON_BIN_DIR=$R/.uv-bin UV_CACHE_DIR=$P2/.uv-cache UV_PYTHON_PREFERENCE=only-managed
++PY=$($UV python find 3.10.20)
+ pr=$1; F=$2; P=$3; D=$4; X=$(date -d "$D + 2 days" +%F); mkdir -p $S $B3/src $B3/venvs; cd $S; rm -f done_$pr failed_$pr
+ fail() { echo "FAILED $pr: $1"; echo "$1" > $S/failed_$pr; exit 1; }
+ echo "=== SGLang PR $pr fix=$F parent=$P exclude-newer=$X $(date -u +%T)"
+--- authors/b3/scripts/b3_caldrv.sh
++++ package/b3/scripts/b3_caldrv.sh
+@@ -2,7 +2,7 @@
+ # b3_caldrv.sh <gpu> <pr> <mode:label[:--transfer]> ... : runs calibration / scoring jobs (b3_cal.sh) one after another on
+ # one GPU of THIS pod. Holds b3/locks/<host>_gpu<gpu>.lock; stages the PR's venvs, model and extras first; before every job
+ # stops on STOP_batch3 or when the GPU shows any compute process.
+-G=$1; PR=$2; shift 2; P2=/home/coder/work/p2-port; B3=$P2/b3; HT=$(bash $B3/scripts/hosttag.sh)
++G=$1; PR=$2; shift 2; . "$(dirname "$(readlink -f "$0")")/../../env.sh"; P2=$ISO_ROOT; B3=$P2/b3; mkdir -p $B3/locks $B3/logs; HT=$(bash $B3/scripts/hosttag.sh)
+ L=$B3/logs/caldrv_${HT}_g$G.log; log() { echo "$(date -u '+%F %T') $HT/gpu$G: $*" >> $L; }
+ exec 9>$B3/locks/${HT}_gpu$G.lock; flock -n 9 || { log "lock busy: not started"; exit 1; }
+ U=$(nvidia-smi --query-gpu=uuid --format=csv,noheader -i $G)
+--- authors/b3/scripts/b3_cal.sh
++++ package/b3/scripts/b3_cal.sh
+@@ -8,20 +8,20 @@
+ # Output: b3/cal/s<pr>/<label>/<tag>/ ; analysis: scripts/cal_analyze.py.
+ set -uo pipefail
+ GPU=$1; PR=$2; LABEL=$3; MODE=$4; TRF=${5:-}
+-P2=/home/coder/work/p2-port; B3=$P2/b3; HT=$(bash $B3/scripts/hosttag.sh)
++. "$(dirname "$(readlink -f "$0")")/../../env.sh"; P2=$ISO_ROOT; B3=$P2/b3; HT=$(bash $B3/scripts/hosttag.sh)
+ RUN=$B3/cal/s$PR/$LABEL; LOG=$RUN/cal.log; mkdir -p $RUN
+ EC=$B3/env/${PR}_cal.env; EK=$B3/env/${PR}_cor.env; . $EC
+-for r in parent fix; do [ -f /tmp/p2/b3/.staged/venv_${PR}_$r ] || { echo "not staged: ${PR}_$r" >> $LOG; exit 2; }; done
+-export P2_STORAGE=tmp-nvme HF_HOME_OVERRIDE=/tmp/p2/b3/hf P2_SCRATCH_ROOT=/tmp/p2/b3/scratch
++for r in parent fix; do [ -f $STAGE/b3/.staged/venv_${PR}_$r ] || { echo "not staged: ${PR}_$r" >> $LOG; exit 2; }; done
++export P2_STORAGE=tmp-nvme HF_HOME_OVERRIDE=$STAGE/b3/hf P2_SCRATCH_ROOT=$STAGE/b3/scratch
+ echo "$(date -u '+%F %T') start $MODE $LABEL host=$HT gpu=$GPU $TRF" >> $LOG
+ job() {  # tag role envfile
+   local tag=$1 role=$2 ef=$3 out=$RUN/$1 rc
+   [ -f "$out/job_meta.json" ] && grep -q '"rc":0,"aborted":""' "$out/job_meta.json" && return 0
+   [ -e $P2/STOP_batch3 ] && { echo "$(date -u '+%F %T') STOP_batch3 before $tag" >> $LOG; exit 8; }
+   [ -d "$out" ] && mv "$out" "${out}.failed.$(date +%H%M%S)"
+-  local C=/tmp/p2/b3/cache/s$PR/$role/$HT-g$GPU HO=0; [ "$HT" = n1 ] && HO=1000; local PB=$(( 31000 + 200 * GPU + HO ))
++  local C=$STAGE/b3/cache/s$PR/$role/$HT-g$GPU HO=0; [ "$HT" = n1 ] && HO=1000; local PB=${PORT:-$(( 31000 + 200 * GPU + HO ))}
+   EXTRA_ENV="VLLM_PORT=$PB MASTER_PORT=$((PB + 50)) SGLANG_PORT_BASE=$((PB + 100)) VLLM_CACHE_ROOT=$C/vllm TORCHINDUCTOR_CACHE_DIR=$C/inductor TRITON_CACHE_DIR=$C/triton" JOB_TIMEOUT=1200 WATCH_FRAC=97 \
+-    bash $B3/scripts/b3_job.sh b3c_${PR}_${LABEL}_$tag $GPU /tmp/p2/b3/venvs/${PR}_$role $out -- \
++    bash $B3/scripts/b3_job.sh b3c_${PR}_${LABEL}_$tag $GPU $STAGE/b3/venvs/${PR}_$role $out -- \
+     bash $P2/screen/with_env.sh $ef $B3/bench/run_b3.sh $out timed > $RUN/$tag.joblog 2>&1; rc=$?
+   echo "$(date -u '+%F %T') end $tag rc=$rc $(tail -1 $out/job_meta.json 2>/dev/null | cut -c1-120)" >> $LOG
+   [ $rc = 0 ] || { echo "$(date -u '+%F %T') $tag failed rc=$rc: stop" >> $LOG; exit 10; }
+--- authors/b3/env/6994_tr_2lora.env
++++ package/b3/env/6994_tr_2lora.env
+@@ -1,4 +1,4 @@
+-export PR=6994 M=Qwen/Qwen2.5-1.5B-Instruct IN=256 OL=256 MEMF=0.80 BENCH=sgl_b3.py STAGE_EXTRA=dir:/home/coder/work/p2-port/b3/lora
++export PR=6994 M=Qwen/Qwen2.5-1.5B-Instruct IN=256 OL=256 MEMF=0.80 BENCH=sgl_b3.py STAGE_EXTRA=dir:$P2/b3/lora
+ export SGL_KW='{"attention_backend": "triton", "sampling_backend": "pytorch", "disable_radix_cache": true, "cuda_graph_max_bs": 64, "max_loras_per_batch": 4}'
+-export LORA_PATHS=lora0=/tmp/p2/b3/lora/qwen15_r16,lora1=/tmp/p2/b3/lora/qwen15_r16b
++export LORA_PATHS=lora0=$STAGE/b3/lora/qwen15_r16,lora1=$STAGE/b3/lora/qwen15_r16b
+ export N=64 REPS=5 ROTATE=1 LORA_NAME=lora0,lora1
+--- authors/b3/env/6994_cal.env
++++ package/b3/env/6994_cal.env
+@@ -1,4 +1,4 @@
+-export PR=6994 M=Qwen/Qwen2.5-1.5B-Instruct IN=256 OL=256 MEMF=0.80 BENCH=sgl_b3.py STAGE_EXTRA=dir:/home/coder/work/p2-port/b3/lora
++export PR=6994 M=Qwen/Qwen2.5-1.5B-Instruct IN=256 OL=256 MEMF=0.80 BENCH=sgl_b3.py STAGE_EXTRA=dir:$P2/b3/lora
+ export SGL_KW='{"attention_backend": "triton", "sampling_backend": "pytorch", "disable_radix_cache": true, "cuda_graph_max_bs": 64, "max_loras_per_batch": 4}'
+-export LORA_PATHS=lora0=/tmp/p2/b3/lora/qwen15_r16,lora1=/tmp/p2/b3/lora/qwen15_r16b
++export LORA_PATHS=lora0=$STAGE/b3/lora/qwen15_r16,lora1=$STAGE/b3/lora/qwen15_r16b
+ export N=64 REPS=5 ROTATE=1 LORA_NAME=lora0 TRANSFERS="b16 b128 2lora"
+--- authors/b3/env/6994_cor.env
++++ package/b3/env/6994_cor.env
+@@ -1,4 +1,4 @@
+-export PR=6994 M=Qwen/Qwen2.5-1.5B-Instruct IN=256 OL=256 MEMF=0.80 BENCH=sgl_b3.py STAGE_EXTRA=dir:/home/coder/work/p2-port/b3/lora
++export PR=6994 M=Qwen/Qwen2.5-1.5B-Instruct IN=256 OL=256 MEMF=0.80 BENCH=sgl_b3.py STAGE_EXTRA=dir:$P2/b3/lora
+ export SGL_KW='{"attention_backend": "triton", "sampling_backend": "pytorch", "disable_radix_cache": true, "cuda_graph_max_bs": 64, "max_loras_per_batch": 4}'
+-export LORA_PATHS=lora0=/tmp/p2/b3/lora/qwen15_r16,lora1=/tmp/p2/b3/lora/qwen15_r16b
++export LORA_PATHS=lora0=$STAGE/b3/lora/qwen15_r16,lora1=$STAGE/b3/lora/qwen15_r16b
+ export N=64 REPS=1 CORRECT=1 LORA_NAME=lora0
+--- authors/b3/env/6994_tr_b16.env
++++ package/b3/env/6994_tr_b16.env
+@@ -1,4 +1,4 @@
+-export PR=6994 M=Qwen/Qwen2.5-1.5B-Instruct IN=256 OL=256 MEMF=0.80 BENCH=sgl_b3.py STAGE_EXTRA=dir:/home/coder/work/p2-port/b3/lora
++export PR=6994 M=Qwen/Qwen2.5-1.5B-Instruct IN=256 OL=256 MEMF=0.80 BENCH=sgl_b3.py STAGE_EXTRA=dir:$P2/b3/lora
+ export SGL_KW='{"attention_backend": "triton", "sampling_backend": "pytorch", "disable_radix_cache": true, "cuda_graph_max_bs": 64, "max_loras_per_batch": 4}'
+-export LORA_PATHS=lora0=/tmp/p2/b3/lora/qwen15_r16,lora1=/tmp/p2/b3/lora/qwen15_r16b
++export LORA_PATHS=lora0=$STAGE/b3/lora/qwen15_r16,lora1=$STAGE/b3/lora/qwen15_r16b
+ export N=16 REPS=5 ROTATE=1 LORA_NAME=lora0
+--- authors/b3/env/6994_tr_b128.env
++++ package/b3/env/6994_tr_b128.env
+@@ -1,4 +1,4 @@
+-export PR=6994 M=Qwen/Qwen2.5-1.5B-Instruct IN=256 OL=256 MEMF=0.80 BENCH=sgl_b3.py STAGE_EXTRA=dir:/home/coder/work/p2-port/b3/lora
++export PR=6994 M=Qwen/Qwen2.5-1.5B-Instruct IN=256 OL=256 MEMF=0.80 BENCH=sgl_b3.py STAGE_EXTRA=dir:$P2/b3/lora
+ export SGL_KW='{"attention_backend": "triton", "sampling_backend": "pytorch", "disable_radix_cache": true, "cuda_graph_max_bs": 64, "max_loras_per_batch": 4}'
+-export LORA_PATHS=lora0=/tmp/p2/b3/lora/qwen15_r16,lora1=/tmp/p2/b3/lora/qwen15_r16b
++export LORA_PATHS=lora0=$STAGE/b3/lora/qwen15_r16,lora1=$STAGE/b3/lora/qwen15_r16b
+ export N=128 REPS=5 ROTATE=1 LORA_NAME=lora0

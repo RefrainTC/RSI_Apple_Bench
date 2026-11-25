@@ -1,0 +1,45 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/optimize_vllm_qwen35_4b_high_concurrency"
+description = "An Apple-style open optimization task, scaled down to one GPU. Stock vLLM 0.19.1 serves Qwen3.5-4B (a hybrid Gated DeltaNet model) to many concurrent short requests with random-token prompts. Score = geometric mean over three hidden workloads of candidate/baseline request throughput, in ABBA rounds, with a logprob gate, a drift bound, an output witness and a runtime audit."
+keywords = ["vllm", "optimization", "throughput", "high-concurrency", "scheduler", "config", "gdn", "apple-style"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090", "RTX 5090"]
+allow_internet = false   # setup downloads pinned inputs; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "ours"
+modeled_on = "Apple RSI-Inference-Bench optimize_qwen3_6_27b_1xh100_open (vLLM 0.20.1, Qwen3.6-27B, 1x H100)"
+upstream_pr = "none (config-only reference found by our sweeps)"
+selected_from = "Apple-style task built for 24-32 GB GPUs"
+package = "environment/ + tests/ (no verified package; see README, How to run it)"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/vllm-project/vllm.git"
+baseline_commit = "vllm==0.19.1 wheel (Python tree of the installed package, 2,104 files, pristine.sha256)"
+reference_fix_commit = "none: two stock flags, solution/ref_fp16/submission/extra_args.txt"
+engine_version = "vllm 0.19.1, torch 2.10.0+cu128, triton 3.6.0, transformers 5.9.0"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen3.5-4B"
+revision = "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "geomean over 1024/64 c128x512, 128/128 c256x1024, 2048/256 c64x256 of candidate/baseline request throughput (vllm bench serve, random, ignore-eos, temperature 1); 2 rounds, ABBA"
+reference_speedup_rtx4090 = 1.313     # first 4090 server; 1.324-1.330 on a second one
+reference_speedup_rtx5090 = 1.3216    # at --gpu-memory-utilization 0.70
+band_pct = 1.3                        # host-to-host spread seen on the same GPU model
+aa_band_pct_rtx4090 = 0.16
+aa_band_pct_rtx5090 = 0.52
+gate = "Apple's logprob gate (>= 95% of positions within 0.05 + 0.05*|lp|) on public and 8 fresh prompts; mean drift <= 0.012 public / 0.02 fresh; exact-length non-empty outputs; output witness |z| < 6; runtime audit; integrity digests; no leftover processes; memory kill line"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.313, ref_jobs = [1.3120, 1.3127, 1.3144], aa_max_pct = 0.16, jobs = 3, minutes_per_scoring = 19, peak_vram_mib = 23632 }
+rtx5090 = { ref = 1.3216, ref_jobs = [1.3169, 1.3216, 1.3239], aa_max_pct = 0.52, jobs = 3, minutes_per_scoring = 21, peak_vram_mib = 26422 }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS-with-fixes (RTX 4090 and RTX 5090)"
+report = "docs/acceptance/batch1.md, docs/acceptance/batch1-5090.md"

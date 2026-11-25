@@ -1,0 +1,42 @@
+{
+  "task": "fix_sglang_20503_waiting_queue_set",
+  "metric": "median rep wall time over 3 reps (one call with 16,384 requests x 32 random ids -> 16 greedy tokens, max_running_requests 256), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.08,
+  "band_pct": 4.0,
+  "aa_band_pct": 3.0,
+  "gate": "exact: counts, live ServerArgs (ports ignored), digests of all 16,384 outputs per timed rep, 24-prompt text pass with top-5 logprobs",
+  "weakest_task_of_batch": "8 % effect against A/A noise of up to 3 %",
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.083, 1.086, 1.068, 1.078, 1.075, 1.087],
+      "jobs_note": "4-GPU server: calibration GPU3, empty-directory calibration GPU2, scoring GPU3 x2, GPU2, empty-directory scoring GPU2; all ties_ref",
+      "extra_scoring_jobs": {"n": 14, "min": 1.066, "max": 1.099, "median": 1.082, "mean": 1.082, "sd_pct": 0.95, "median_gpu2": 1.086, "median_gpu3": 1.078, "all_ties_ref": true, "timed_reps_identical": "42 of 42"},
+      "between_job_sd_pct": 0.7,
+      "single_pairs_range": [1.035, 1.119],
+      "aa_max_pct": 2.97,
+      "aa_max_pct_note": "2.06 (GPU3 calibration), 2.97 (GPU2 empty-directory calibration, next to a build on the same CCD); stop rule was 3 %",
+      "median_rep_s": {"parent": "10.12-10.81", "fix": "9.40-9.79"},
+      "fix_reward_range": [0.85, 1.0],
+      "peak_vram_gb": 20.5,
+      "minutes_per_scoring": 10,
+      "minutes_calibration": 27,
+      "minutes_setup": "13-20",
+      "screen": 1.098,
+      "transfers": {"n4k_4096_requests": 1.008, "r64_max_running_64": 1.048}
+    }
+  },
+  "variants": [
+    {"name": "short", "speedup": 1.20, "verdict": "fail:counts,exact,correct"},
+    {"name": "prefix", "speedup": 1.10, "verdict": "ties_ref", "note": "accepted by design: right only while admitted requests are the queue head (FCFS, nothing skipped)"},
+    {"name": "multistep", "speedup": 1.04, "verdict": "fail:settings"}
+  ],
+  "acceptance": {
+    "verdict": "in progress",
+    "interim": "provisional PASS",
+    "host": "same 4-GPU server, GPU1",
+    "speedups": [1.097],
+    "speedups_note": "calibration (pairs 1.0647-1.1053), ties_ref, all 25 timed digests identical, correctness 24/24; scoring jobs still running",
+    "aa_max_pct": 2.45,
+    "build": "reproduced exactly (sources, 171-package freezes, sglang files) in 783 s"
+  }
+}

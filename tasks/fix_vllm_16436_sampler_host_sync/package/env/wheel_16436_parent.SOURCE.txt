@@ -1,0 +1,5 @@
+pr=16436 role=parent commit=f728ab8e3578c22b42ed53e51b5e8ec35328d8b9
+url=https://wheels.vllm.ai/f728ab8e3578c22b42ed53e51b5e8ec35328d8b9/vllm-0.8.5.dev117%2Bgf728ab8e3-cp38-abi3-manylinux1_x86_64.whl
+sha256=6e5c56bacf294392a31a458f64ae23d9a072f522cf07a0e867f21bf65910b98f
+version=0.8.5.dev117+gf728ab8e3
+file=vllm-0.8.5.dev117+gf728ab8e3-cp38-abi3-manylinux1_x86_64.whl

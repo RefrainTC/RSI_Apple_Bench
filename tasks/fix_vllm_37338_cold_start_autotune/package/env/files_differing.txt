@@ -1,0 +1,11 @@
+vllm/model_executor/layers/fla/ops/chunk_delta_h.py
+vllm/model_executor/layers/fla/ops/chunk_o.py
+vllm/model_executor/layers/fla/ops/chunk.py
+vllm/model_executor/layers/fla/ops/chunk_scaled_dot_kkt.py
+vllm/model_executor/layers/fla/ops/fused_recurrent.py
+vllm/model_executor/layers/fla/ops/fused_sigmoid_gating.py
+vllm/model_executor/layers/fla/ops/index.py
+vllm/model_executor/layers/fla/ops/kda.py
+vllm/model_executor/layers/fla/ops/wy_fast.py
+vllm/model_executor/models/qwen3_next.py
+vllm/_version.py

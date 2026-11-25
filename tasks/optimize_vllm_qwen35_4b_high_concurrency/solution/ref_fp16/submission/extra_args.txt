@@ -1,0 +1,2 @@
+--max-num-batched-tokens 12288
+--mamba-ssm-cache-dtype float16

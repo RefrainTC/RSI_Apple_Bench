@@ -1,0 +1,49 @@
+{
+  "task": "fix_vllm_7822_prefix_caching",
+  "metric": "wall time of the first generate() pass (100 shared-prefix requests x 200 tokens, empty prefix cache), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.479,
+  "band_pct": 0.5,
+  "aa_band_pct": 0.16,
+  "gpus": {
+    "rtx4090": {
+      "jobs": null,
+      "jobs_note": "6 scoring jobs on GPU1 of the 4-GPU server: median 1.4789, range 1.477-1.483; per-job values are not itemized in the sources",
+      "n_jobs": 6,
+      "between_job_sd_pct": 0.17,
+      "calibration_ref": 1.480,
+      "calibration_pairs": [1.4803, 1.4837, 1.4769, 1.4835, 1.4744],
+      "aa_max_pct": 0.16,
+      "aa_max_pct_scoring_conditions": 0.47,
+      "first_pass_s": {"parent": 9.10, "fix": 6.15},
+      "second_server_jobs": [1.4736, 1.4725, 1.4708, 1.4728],
+      "second_server_note": "2-GPU server, GPU1: median 1.4727, -0.43 % from the 4-GPU server",
+      "transfers": {"output_10_tokens": 3.93, "requests_300": 1.55, "identical_prompt_x100": 1.49, "requests_12_no_reuse": 1.0},
+      "peak_vram_mib": null,
+      "minutes_per_scoring": 4.7,
+      "minutes_calibration": 14
+    },
+    "rtx5090": {"runs": false, "reason": "pinned torch 2.4.0+cu121 has no sm_120 code (not attempted)"}
+  },
+  "variants": [
+    {"name": "C1_truncate", "speedup": null, "verdict": "fail:output_length"},
+    {"name": "C2_skip_detok", "speedup": null, "verdict": "fail:output"},
+    {"name": "C3_atexit_timing", "speedup": null, "verdict": "gate_reject"},
+    {"name": "C3w_timing_forgery", "speedup": null, "verdict": "fail:audit,witness"},
+    {"name": "C4_cuda_graphs", "speedup": null, "verdict": "gate_reject"},
+    {"name": "C4r_cuda_graphs", "speedup": null, "verdict": "fail:settings"},
+    {"name": "C5_C5v_C6_lower_precision", "speedup": null, "verdict": "fail:output"},
+    {"name": "C7_C7u_read_reference", "speedup": null, "verdict": "fail:audit"},
+    {"name": "C7g_reference_path", "speedup": null, "verdict": "gate_reject"},
+    {"name": "C9_defer_detok", "speedup": 1.51, "verdict": "NOT CAUGHT"},
+    {"name": "C10_silence_audit", "speedup": null, "verdict": "fail:witness"},
+    {"name": "C11_prefill_at_init", "speedup": null, "verdict": "fail:output"},
+    {"name": "C12_slow_parent_venv", "speedup": 1.56, "verdict": "NOT CAUGHT"},
+    {"name": "V1_first_block_dedup (legitimate)", "speedup": 1.57, "verdict": "fail:output_mismatch (wrongly rejected; 18 % exact)"},
+    {"name": "V2_max_6_groups_per_step (legitimate)", "speedup": 1.51, "verdict": "fail:output_mismatch (wrongly rejected; 21-22 % exact)"}
+  ],
+  "acceptance": {
+    "verdict": "not yet (no independent rebuild)",
+    "authors_empty_dir_test": {"calibration_ref": 1.4758, "aa_max_pct": 0.21, "speedups": [1.4871, 1.4787], "pristine_aa_job": 0.9980,
+      "packaging_defects_fixed": ["vllm-flash-attn missing from the lock", "post-calibration output-threshold step missing from RUN.md", "env.sh let site.env override the caller's GPU/CPUS/PORT"]}
+  }
+}

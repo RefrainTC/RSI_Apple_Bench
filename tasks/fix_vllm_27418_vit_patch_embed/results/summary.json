@@ -1,0 +1,43 @@
+{
+  "task": "fix_vllm_27418_vit_patch_embed",
+  "metric": "median rep wall time over 5 reps (4 sequential generate() calls, one 1344 x 1344 image each, 8 greedy tokens), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.69,
+  "band_pct": 3.0,
+  "aa_band_pct": 5.0,
+  "gate": "tolerance: counts incl. image-token prompt lengths, settings (num_gpu_blocks ignored), teacher-forced re-read by the parent (tau 1.0 nat, at most 2 % of tokens above 0.5 nats) on timed reps and an 8-image pass, 24 text-only prompts bit-identical",
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.691, 1.700, 1.679, 1.679, 1.685, 1.693, 1.674, 1.730, 1.679, 1.686],
+      "jobs_note": "4-GPU server. First 4 set REF: calibration GPU3, scoring GPU2, empty-directory calibration and scoring GPU2. Then 4 later scoring jobs (GPUs 0-3), then the re-verify after the tester's fixes (calibration, scoring). All ties_ref.",
+      "between_job_sd_pct": 0.6,
+      "aa_max_pct": 3.6,
+      "aa_max_pct_note": "0.7 (GPU3 calibration), 3.6 (empty-directory calibration, one slow parent rep), 3.25 (re-verify); screen up to 3.9; independent tester 1.24",
+      "median_rep_s": {"parent": "2.47-2.61", "fix": "1.46-1.51"},
+      "fix_reread_worst_gap_nats": 0.125,
+      "peak_vram_mib": 21050,
+      "peak_vram_reread_worst_variant_mib": 21374,
+      "minutes_per_scoring": 11,
+      "minutes_calibration": 26,
+      "minutes_setup": "15-20",
+      "transfers": {"i448_one_per_call": [1.263, 1.270], "w1_prior_load_32_in_one_call": [0.85, 0.92]},
+      "screen": {"w1_prior_load": 0.97, "w2_task_load": 1.71}
+    }
+  },
+  "variants": [
+    {"name": "short", "speedup": 1.77, "verdict": "fail:counts,text"},
+    {"name": "lowres", "speedup": 5.58, "verdict": "fail:counts,tf"},
+    {"name": "skipimg", "speedup": 4.55, "verdict": "fail:tf"},
+    {"name": "subpatch", "speedup": 1.72, "verdict": "fail:tf", "note": "caught by one token: 4 of 160 timed tokens above 0.5 nats (2.5 % vs limit 2 %)"},
+    {"name": "cheappatch", "speedup": 1.69, "verdict": "ties_ref", "note": "accepted: exact for still images, wrong for video"}
+  ],
+  "acceptance": {
+    "verdict": "PASS-with-fixes",
+    "host": "same 4-GPU server, GPUs 0 and 1",
+    "speedups": [1.693, 1.675, 1.679],
+    "speedups_note": "calibration, scoring, scoring; all ties_ref",
+    "aa_max_pct": 1.24,
+    "variants_same_verdict": "6 of 6 runs (5 variants, subpatch also as a full scoring job at 1.647)",
+    "fixes": "re-read memory pool MEMU 0.60 -> 0.50 (subpatch re-read peak 23,782 -> 21,374 MiB); cache-copy and calibration-order fixes; re-verified from a new empty directory: calibration 1.679, scoring 1.686 ties_ref",
+    "second_host": "runs exist on the 2-GPU server but are not summarized; not used"
+  }
+}

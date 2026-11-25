@@ -1,0 +1,22 @@
+{"task": "optimize_vllm_qwen35_4b_high_concurrency",
+ "metric": "geomean over 1024/64 c128x512, 128/128 c256x1024, 2048/256 c64x256 of candidate/baseline request throughput, 2 ABBA rounds",
+ "reference": "--max-num-batched-tokens 12288 --mamba-ssm-cache-dtype float16",
+ "reference_speedup": {"rtx4090_first_server": 1.313, "rtx4090_second_server": [1.3236, 1.3295], "rtx5090_mem070": 1.3216},
+ "gpus": {
+  "rtx4090": {"locked_gpu_memory_utilization": 0.85, "kill_line_mib": 23800,
+              "ref_jobs": [1.3120, 1.3127, 1.3144], "ref_per_workload_approx": [1.33, 1.45, 1.18],
+              "aa_jobs": [1.0016, 0.9995], "aa_jobs_earlier_harness": [1.0008, 1.0002, 1.0004, 1.0010], "aa_job_v5d": 0.9992,
+              "aa_max_pct": 0.16, "perturbed": {"ref": [1.109, 1.107], "ref_second_void": true, "aa": 0.998},
+              "peak_vram_mib": {"baseline": 22628, "reference": [23598, 23632]}, "minutes_per_scoring": 19},
+  "rtx5090": {"locked_gpu_memory_utilization": 0.70, "kill_line_mib_whole_card": 31000,
+              "ref_jobs": [1.3169, 1.3216, 1.3239], "ref_per_workload_range": [[1.278, 1.293], [1.433, 1.444], [1.246, 1.252]],
+              "aa_jobs": [1.0010, 0.9996, 0.9948], "aa_max_pct": 0.52,
+              "baseline_req_per_s": [[15.03, 15.13], [35.28, 35.60], [6.02, 6.09]],
+              "perturbed": {"ref": 1.072, "ref_per_workload": [1.0095, 1.1273, 1.0817], "aa": 0.996},
+              "peak_vram_mib": {"baseline": 24216, "reference": 26422}, "minutes_per_scoring": [20.7, 21.1]}},
+ "variants": [
+  {"name": "mantissa_minus_3_bits", "drift": 0.0107, "verdict": "passes the gate (undetected)"},
+  {"name": "fp16_gdn_state", "verdict": "allowed; not separated by any gated measurement"}],
+ "acceptance": {"verdict": "PASS-with-fixes",
+                "rtx4090_second_server": {"ref": [1.3236, 1.3295], "aa": 0.9981, "seconds_per_scoring": [1084, 1119]},
+                "rtx5090": {"ref": [1.3243, 1.3186], "aa": [0.9985], "aa_void_harness_fault": 0.9974, "setup_seconds": 800}}}

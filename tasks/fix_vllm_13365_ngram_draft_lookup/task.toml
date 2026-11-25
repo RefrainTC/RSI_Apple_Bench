@@ -1,0 +1,41 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_vllm_13365_ngram_draft_lookup"
+description = "Offline vLLM 0.7.3 V1 with n-gram (prompt-lookup) speculative decoding, k = 5, decodes 32 long repeated-segment prompts x 128 greedy tokens on Qwen2.5-1.5B-Instruct, and the time between GPU steps is longer than it needs to be. Scored on the sum of 6 timed decode reps, each on new prompts, against the unmodified tree in interleaved ABBA pairs on one RTX 4090. Outputs, proposals, acceptances and step counts must be exactly the parent's."
+keywords = ["vllm", "optimization", "speculative-decoding", "ngram", "cpu-overhead", "offline", "v1"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]
+allow_internet = false   # setup (package/RUN.md steps 2-4) downloads wheels, CPython and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "vLLM history"
+upstream_pr = "https://github.com/vllm-project/vllm/pull/13365"
+selected_from = "ISO-Bench list, screen batch 2 (written prior P = 0.35)"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/vllm-project/vllm.git"
+baseline_commit = "c8d70e2437feecdb3762ce17298df33439ae1bd1"
+reference_fix_commit = "4c822298981a8f7521492075ff72659985fc4c3f"
+engine_version = "vLLM 0.7.3.dev215 (V1 engine, per-commit wheels; vllm.__version__ prints 'dev'), torch 2.5.1+cu124; task venv = parent + numba 0.60.0 / llvmlite 0.43.0"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+revision = "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "sum of 6 timed decode reps (32 x 2048-token repeated-segment prompts, prefilled untimed, 128 greedy tokens, new prompts per rep), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.0934
+band_pct = 0.5
+aa_band_pct = 0.47
+gate = "kernel gate (numba CPU JIT allowed, GPU targets rejected) and locked files; exact token ids, text hashes and engine-core counters (steps, proposed/accepted drafts, proposal hash) per correctness group and per timed run; direct unit test of NgramProposer.propose on 400 contexts; settings readback; GPU-busy witness; audit hook; integrity manifests; parent-time sentinel"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.0934, aa_max_pct = 0.47, jobs = 7, minutes_per_scoring = 9.6, note = "7 unflagged jobs on two 4090 servers; all 10 jobs median 1.0949 incl. 3 flagged during a host-load spike" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS-with-fixes"
+report = "docs/acceptance/batch2.md"

@@ -1,0 +1,2 @@
+{"lp_tol": 0.001, "ref": 1.79, "band": 0.03, "aa_band": 0.03, "settings_ignore": ["cache_config.num_gpu_blocks"],
+ "note": "final 2026-11-25 04:55 UTC: ref = calibrations 1.789 (GPU3, package copy) and 1.791 (GPU2, empty-directory copy); band 3 % (scoring jobs 1.787); aa_band 3 % (A/A max deviation 0.46 % on GPU3, 2.47 % on GPU2: whole runs shift by 1-2.5 %); exact output gate with the one-rerun rule; see CARD_vllm30056.md"}

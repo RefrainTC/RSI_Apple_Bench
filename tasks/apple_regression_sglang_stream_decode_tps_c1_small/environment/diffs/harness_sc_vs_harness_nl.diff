@@ -1,0 +1,5 @@
+diff --color -r -x __pycache__ hnl/_candidate_runner.py hsc/_candidate_runner.py
+86a87
+>         "--use-server-token-count",  # [local adaptation, edit 5] server usage, not re-tokenized text
+184a186
+>         "--use-server-token-count",  # [local adaptation, edit 5] server usage, not re-tokenized text

@@ -1,0 +1,53 @@
+{
+  "task": "fix_sglang_16521_multiturn_prefix_reuse",
+  "metric": "median turn-2 wall time over 4 reps (64 conversations per rep), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 3.827,
+  "band_pct": 1.26,
+  "aa_band_pct": 1.0,
+  "gpus": {
+    "rtx4090": {
+      "jobs": [3.833, 3.848, 3.871, 3.794, 3.823, 3.830, 3.804, 3.821],
+      "jobs_note": "first 3 on GPU0, last 5 on GPU1 of the 2-GPU server; includes the package test's calibration (3.804) and scoring job (3.821)",
+      "aa_max_pct": 0.61,
+      "between_job_sd_pct": 0.63,
+      "turn2_s": {"parent": "0.424-0.434", "fix": "0.110-0.114"},
+      "peak_vram_gb": 20.4,
+      "minutes_per_scoring": "8.6-8.9",
+      "minutes_calibration": 22,
+      "second_server_screen_jobs": [3.806, 3.853],
+      "transfers": {"turn1_output_64": 1.71, "turn1_output_1024": 11.3, "page_size_16": 3.84}
+    },
+    "rtx5090": {
+      "jobs": [3.524, 3.531, 3.491],
+      "jobs_note": "calibration, scoring 1, scoring 2; package unchanged; gate.json still holds the 4090 REF",
+      "ref": 3.524,
+      "aa_max_pct": 0.53,
+      "aa_scoring_job": 1.003,
+      "turn2_s": {"parent": 0.325, "fix": 0.092},
+      "peak_vram_gb": 26.8,
+      "minutes_per_scoring": 8.5,
+      "variants": [
+        {"name": "drophist", "speedup": 3.93, "verdict": "fail:tf"},
+        {"name": "short2", "speedup": 4.26, "verdict": "fail:counts"}
+      ]
+    }
+  },
+  "variants": [
+    {"name": "drophist", "speedup": 4.28, "verdict": "fail:tf"},
+    {"name": "short2", "speedup": 4.86, "verdict": "fail:counts"},
+    {"name": "fp8kv", "speedup": 3.99, "verdict": "fail:settings,tf"},
+    {"name": "kvzero", "speedup": 2.71, "verdict": "fail:tf"},
+    {"name": "kvnoise100", "speedup": 1.64, "verdict": "fail:tf"},
+    {"name": "kvnoise10", "speedup": 1.64, "verdict": "pass (outputs as correct as the fix's)"},
+    {"name": "kvnoise1", "speedup": 1.64, "verdict": "pass (outputs as correct as the fix's)"},
+    {"name": "kvperm", "speedup": 3.78, "verdict": "pass (equivalent code)"}
+  ],
+  "acceptance": {
+    "verdict": "PASS",
+    "host": "authors' host (2-GPU server)",
+    "calibration_ref": 3.807,
+    "aa_max_pct": 0.23,
+    "speedups": [3.809, 3.831],
+    "deviations": 0
+  }
+}

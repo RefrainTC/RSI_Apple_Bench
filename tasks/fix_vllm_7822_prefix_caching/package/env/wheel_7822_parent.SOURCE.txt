@@ -1,0 +1,5 @@
+pr=7822 role=parent commit=029c71de11bc3bcf84a1b3cf9d91e79ab6949799
+url=https://wheels.vllm.ai/029c71de11bc3bcf84a1b3cf9d91e79ab6949799/vllm-0.5.5-cp38-abi3-manylinux1_x86_64.whl
+sha256=c7e6ff557caec8b283984db1257da410151c3725ca92827b7e82bad3656272f7
+version=0.5.5
+file=vllm-0.5.5-cp38-abi3-manylinux1_x86_64.whl

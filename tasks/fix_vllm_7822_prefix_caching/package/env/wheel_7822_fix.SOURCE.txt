@@ -1,0 +1,5 @@
+pr=7822 role=fix commit=2deb029d115dadd012ce5ea70487a207cb025493
+url=https://wheels.vllm.ai/2deb029d115dadd012ce5ea70487a207cb025493/vllm-0.5.5-cp38-abi3-manylinux1_x86_64.whl
+sha256=b61bbdf2405cce367eea673ebb0e171c894884fab740c20c7590605b93c82de0
+version=0.5.5
+file=vllm-0.5.5-cp38-abi3-manylinux1_x86_64.whl

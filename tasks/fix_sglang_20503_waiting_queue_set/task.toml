@@ -1,0 +1,41 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_sglang_20503_waiting_queue_set"
+description = "A large offline batch on SGLang (16,384 short requests in one call, at most 256 running at once, Qwen2.5-0.5B-Instruct) takes longer than one RTX 4090 needs. Scored on the median rep wall time against the unmodified tree in interleaved pairs on the same GPU. Outputs must be bit-identical: token counts, live ServerArgs, the digest of all 16,384 outputs per rep and a 24-prompt text pass. The weakest task of its batch: an 8 % effect against A/A noise of up to 3 %."
+keywords = ["sglang", "optimization", "scheduler", "cpu-overhead", "waiting-queue", "offline", "large-batch"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]
+allow_internet = false   # setup (package/RUN.md steps 2-5) downloads sources, the lock, CUDA pieces and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "SGLang history"
+upstream_pr = "https://github.com/sgl-project/sglang/pull/20503"
+selected_from = "mined, batch 6 (candidate N2)"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/sgl-project/sglang.git"
+baseline_commit = "20a23e3173b5b3bdb16f19451f55d448b3747fb0"
+reference_fix_commit = "a6c7bb54eb3aeb60df44c6087ab7c929376e2022"
+engine_version = "SGLang source at the parent commit (2026-03, built from python/; reports 0.0.0.dev0), torch 2.9.1+cu128 with cuDNN 9.10, sglang-kernel 0.4.0, flashinfer 0.6.6, triton 3.5.1, transformers 4.57.1, Python 3.10"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2.5-0.5B-Instruct"
+revision = "7ae557604adf67be50417f59c2c2f167def9a775"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median rep wall time over 3 reps (one call with 16,384 requests x 32 random ids -> 16 greedy tokens, max_running_requests 256), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.08
+band_pct = 4.0
+aa_band_pct = 3.0
+gate = "exact: output token counts, live ServerArgs (ports ignored), digest of every timed rep (ids + text of all 16,384 requests), and a 24-prompt text pass (64 tokens with top-5 logprobs) identical to the same job's parent pass"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.08, aa_max_pct = 2.97, jobs = 20, minutes_per_scoring = 10, note = "2 calibrations, 4 scoring jobs, then 14 extra scoring jobs (median 1.082, SD 0.95 %)" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "in progress (interim: calibration 1.097, inside the band, A/A 2.45 %; provisional PASS)"
+report = "docs/acceptance/batch6.md (interim)"

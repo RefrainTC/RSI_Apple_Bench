@@ -1,0 +1,41 @@
+{
+  "task": "fix_vllm_12380_cuda_graph_decode",
+  "metric": "median wall time of 10 timed generate() calls (batch 8 x 32 random tokens, 128 greedy tokens, new prompts per call), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.507,
+  "band_pct": 1.1,
+  "aa_band_pct": 2.3,
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.509, 1.516, 1.513, 1.519, 1.499, 1.504, 1.503, 1.497],
+      "jobs_note": "first 4 on GPU0 of the 4-GPU server, last 4 on GPU0 of the 2-GPU server (~0.9 % lower, from the fix side)",
+      "between_job_sd_pct": 0.54,
+      "calibration_ref": 1.513,
+      "calibration_pair_range": [1.496, 1.524],
+      "aa_max_pct": 2.3,
+      "pristine_as_candidate": 0.998,
+      "median_rep_s": {"parent": 2.19, "fix": 1.45},
+      "transfers": {"batch_1": 1.52, "batch_32": 1.40, "output_512": 1.50},
+      "peak_vram_mib": 20100,
+      "peak_vram_note": "20.1 GB as reported (20.2 GB at batch 32)",
+      "minutes_per_scoring": 8.7,
+      "minutes_calibration": 28.5
+    },
+    "rtx5090": {"runs": false, "reason": "torch 2.5.1+cu124 and vLLM kernels have no sm_120 code: 'no kernel image is available' at the first tensor op"}
+  },
+  "variants": [
+    {"name": "K1_truncate_100", "speedup": 1.92, "verdict": "fail:output_mismatch,step_trace"},
+    {"name": "K2_skip_detok", "speedup": 1.51, "verdict": "fail:output_mismatch,correctness"},
+    {"name": "K3_forged_timing", "speedup": 1.67, "verdict": "fail:audit_flag,timing_witness"},
+    {"name": "K4_always_decode_only (broken)", "speedup": 1.49, "verdict": "fail:output_mismatch,correctness"},
+    {"name": "K5_max_4_prefills_per_step", "speedup": 1.51, "verdict": "fail:step_trace,output_mismatch"}
+  ],
+  "acceptance": {
+    "verdict": "PASS-with-fixes",
+    "calibration_ref": 1.5145,
+    "speedups": [1.523, 1.497, 1.511, 1.521],
+    "multi_job_ref": 1.516,
+    "aa_max_pct": 4.2,
+    "pristine_as_candidate": 0.998,
+    "authors_empty_dir_test": {"calibration_ref": 1.5244, "aa_max_pct": 2.32, "speedups": [1.5250, 1.5220, 1.5241], "venv_equivalence_pair": 1.5334}
+  }
+}

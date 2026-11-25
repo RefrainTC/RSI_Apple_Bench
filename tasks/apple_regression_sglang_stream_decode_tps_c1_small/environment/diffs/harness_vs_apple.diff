@@ -1,0 +1,33 @@
+diff --color -r -x __pycache__ apple_tests/_candidate_runner.py h/_candidate_runner.py
+123c123,125
+<             ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+---
+>             ["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"]
+>             # [local adaptation] only the GPU this run uses (teardown wait; other GPUs on the box are busy)
+>             + ([f"--id={os.environ['CUDA_VISIBLE_DEVICES']}"] if os.environ.get("CUDA_VISIBLE_DEVICES") else []),
+173c175
+<     ]
+---
+>     ] + os.environ.get("RSI_EXTRA_SERVE_ARGS", "").split()  # [local adaptation] same for both arms
+diff --color -r -x __pycache__ apple_tests/workloads.json h/workloads.json
+21c21
+<       "tp_size": 4,
+---
+>       "tp_size": 1,
+33c33
+<       "tp_size": 4,
+---
+>       "tp_size": 1,
+44c44
+<       "tp_size": 4,
+---
+>       "tp_size": 1,
+56c56
+<       "tp_size": 4,
+---
+>       "tp_size": 1,
+72c72,73
+<   ]
+---
+>   ],
+>   "_local_adaptation": "LOCAL ADAPTATION: tp_size 4 -> 1 on every point (gpt-oss-20b on 1x RTX 4090 instead of gpt-oss-120b on 4xB200). Shapes, roles, guard bands unchanged."

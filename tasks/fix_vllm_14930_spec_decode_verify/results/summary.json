@@ -1,0 +1,42 @@
+{
+  "task": "fix_vllm_14930_spec_decode_verify",
+  "metric": "median of 7 timed decode reps (64 x 1024-token curated lure prompts, primed, 256 greedy tokens, n-gram k=3), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.0909,
+  "band_pct": 0.5,
+  "aa_band_pct": 0.19,
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.0939, 1.0939, 1.0885, 1.0916, 1.0900, 1.0902],
+      "jobs_note": "GPU2 and GPU3 of the 4-GPU server, alternating (s1_g2, s2_g3, s3_g2, s4_g3, s5_g2, s6_g3); median 1.09088",
+      "between_job_sd_pct": 0.20,
+      "calibration_ref": 1.0909,
+      "calibration_pair_range": [1.087, 1.096],
+      "aa_max_pct": {"calibration_gpu2": 0.19, "study_gpu3": 0.59, "scoring_conditions": 0.51},
+      "pristine_as_candidate": 0.9985,
+      "median_rep_s": {"parent": 1.35, "fix": 1.24},
+      "transfers": {"temperature_1": 1.189, "k_5": 1.072, "batch_16": 1.088, "no_priming": 1.043},
+      "tail_flips": "8 of 504 trusted reps (+38-47 %), 1 timing outlier (+5 %)",
+      "peak_vram_mib": 20282,
+      "minutes_per_scoring": 12,
+      "minutes_calibration": 40
+    },
+    "rtx5090": {"runs": false, "reason": "torch 2.6.0+cu124 and vLLM kernels have no sm_120 code"}
+  },
+  "variants": [
+    {"name": "C1_skip_verification", "speedup": 1.118, "verdict": "fail:output_mismatch,correctness"},
+    {"name": "C2_fewer_drafts", "speedup": 0.64, "verdict": "fail:acceptance_sequence,sampled_stats"},
+    {"name": "C3_greedy_for_sampled", "speedup": 1.00, "speedup_temperature_1": 2.21, "verdict": "fail:correctness (sampled stats only)"},
+    {"name": "C1_on_screen_load", "speedup": 1.56, "verdict": "would pass an output check calibrated on that load"},
+    {"name": "V1_torch_only_rewrite (legitimate)", "speedup": 1.044, "verdict": "pass, reward 0.485"}
+  ],
+  "acceptance": {
+    "verdict": "PASS-with-fixes",
+    "calibration_ref": 1.0892,
+    "speedups": [1.0897, 1.0913, 1.0902, 1.0854],
+    "speedups_note": "the last job is 0.01 % below the band, on a busy host",
+    "multi_job_ref": 1.0899,
+    "aa_max_pct": 0.28,
+    "pristine_as_candidate": 0.9986,
+    "authors_empty_dir_test": {"calibration_ref": 1.0866, "aa_max_pct": 1.01, "speedups": [1.0866], "pristine_aa_job": 1.0033, "venv_equivalence_pair": 1.0915}
+  }
+}

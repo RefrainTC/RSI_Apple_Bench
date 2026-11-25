@@ -1,0 +1,5 @@
+pr=12380 role=fix commit=6dd94dbe94c1820a1e224cba65efcf0befa97995
+url=https://wheels.vllm.ai/6dd94dbe94c1820a1e224cba65efcf0befa97995/vllm-0.6.6.post2.dev365%2Bg6dd94dbe-cp38-abi3-manylinux1_x86_64.whl
+sha256=9c99534fb83d58e8ee7fe928c1cc5229d58f1df9fd3bd580beeefe612815f021
+version=0.6.6.post2.dev365+g6dd94dbe
+file=vllm-0.6.6.post2.dev365+g6dd94dbe-cp38-abi3-manylinux1_x86_64.whl

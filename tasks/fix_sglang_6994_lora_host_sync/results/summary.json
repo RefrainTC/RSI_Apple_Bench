@@ -1,0 +1,36 @@
+{
+  "task": "fix_sglang_6994_lora_host_sync",
+  "metric": "median wall time of 5 timed Engine.generate() calls (64 LoRA requests x 256 random tokens, 256 greedy tokens, new prompts per call), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.474,
+  "band_pct": 1.1,
+  "aa_band_pct": 1.15,
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.466, 1.471, 1.477, 1.472, 1.465, 1.485, 1.479, 1.485],
+      "jobs_note": "2-GPU server GPU0 x2; 4-GPU server GPU3 x3, GPU1 x2, GPU2 x1; card offset up to ~1.3 % from the fix side",
+      "between_job_sd_pct": 0.54,
+      "calibration_ref": 1.475,
+      "calibration_pair_range": [1.468, 1.478],
+      "aa_max_pct": 1.15,
+      "median_rep_s": {"parent": "3.58-3.67", "fix": "2.42-2.48"},
+      "transfers": {"batch_16": 1.40, "batch_128_eager": 1.17, "two_adapters": 1.475},
+      "timed_text_sha_identical": {"fix_vs_parent": "94/145 reps", "parent_aa": "20/25 reps"},
+      "peak_vram_mib": 20752,
+      "peak_vram_note": "package test; card reports 20.9 GB",
+      "minutes_per_scoring": 4.5,
+      "minutes_calibration": 13.5
+    },
+    "rtx5090": {"runs": false, "reason": "torch 2.7.1+cu126 has no sm_120 code; sgl-kernel 0.1.7 has SASS only up to sm_90"}
+  },
+  "variants": [],
+  "variants_note": "no canaries or broken variants exist for this task",
+  "acceptance": {
+    "verdict": "PASS-with-fixes",
+    "calibration_ref": 1.4749,
+    "speedups": [1.4803, 1.4860, 1.4898, 1.4800, 1.4885],
+    "all_jobs_median": 1.4831,
+    "aa_max_pct": 0.62,
+    "transfers": {"batch_16": 1.402, "batch_128_eager": 1.161, "two_adapters": 1.478},
+    "authors_empty_dir_test": {"calibration_ref": 1.483, "aa_max_pct": 0.58, "speedups": [1.4764], "peak_vram_mib": 20752}
+  }
+}

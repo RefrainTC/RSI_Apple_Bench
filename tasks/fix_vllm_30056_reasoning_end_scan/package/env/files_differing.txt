@@ -1,0 +1,7 @@
+vllm/_version.py
+vllm/reasoning/abs_reasoning_parsers.py
+vllm/reasoning/basic_parsers.py
+vllm/reasoning/deepseek_v3_reasoning_parser.py
+vllm/reasoning/holo2_reasoning_parser.py
+vllm/reasoning/identity_reasoning_parser.py
+vllm/v1/structured_output/__init__.py

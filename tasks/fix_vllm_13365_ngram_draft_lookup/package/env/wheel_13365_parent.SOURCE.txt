@@ -1,0 +1,5 @@
+pr=13365 role=parent commit=c8d70e2437feecdb3762ce17298df33439ae1bd1
+url=https://wheels.vllm.ai/c8d70e2437feecdb3762ce17298df33439ae1bd1/vllm-0.7.3.dev215%2Bgc8d70e24-cp38-abi3-manylinux1_x86_64.whl
+sha256=48513f1cbff0aa090b1df516117af66fd6c529b20efbb58ab82943aa6c7cab91
+version=0.7.3.dev215+gc8d70e24
+file=vllm-0.7.3.dev215+gc8d70e24-cp38-abi3-manylinux1_x86_64.whl

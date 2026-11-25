@@ -1,0 +1,10 @@
+# CPU pinning table, 4090-server main pod (written by P2, 2026-11-23 12:4x UTC; from lscpu -e).
+# AMD Ryzen Threadripper PRO 5975WX: 32 cores / 64 threads, 1 NUMA node, 4 CCDs each with its own L3.
+# Physical core k = logical CPUs k and k+32 (SMT siblings). One CCD (8 cores + their siblings) per GPU, so the
+# sets share no physical core and no L3:
+#   L3 0: 0-7,32-39   L3 1: 8-15,40-47   L3 2: 16-23,48-55   L3 3: 24-31,56-63
+# Columns: gpu  cpus(taskset -c list)  owner
+0 0-7,32-39 P2
+1 8-15,40-47 P2
+2 16-23,48-55 P2
+3 24-31,56-63 G2

@@ -1,0 +1,7 @@
+# CPU pinning map: '<gpu> <taskset cpu list>'. One L3 cache / CCD per GPU, sets share no physical core.
+# Example below = the 4-GPU RTX 4090 server we used (Threadripper PRO 5975WX: 4 CCDs, core k = CPUs k and k+32).
+# On the RTX 5090 workstation (Ryzen 9 3950X, core k = CPUs k and k+16) we used '0 0-7,16-23'. Write your own.
+0 0-7,32-39
+1 8-15,40-47
+2 16-23,48-55
+3 24-31,56-63

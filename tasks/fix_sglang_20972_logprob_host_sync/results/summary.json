@@ -1,0 +1,47 @@
+{
+  "task": "fix_sglang_20972_logprob_host_sync",
+  "metric": "median wall time of 5 generate() calls (8 x 128 -> 512 tokens, return_logprob, top_logprobs_num 5), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.142,
+  "band_pct": 0.6,
+  "aa_band_pct": 0.7,
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.142, 1.1475, 1.1368, 1.1435, 1.1388, 1.1412, 1.1431],
+      "jobs_note": "first 4 on GPU1, last 3 on GPU0 of the 2-GPU server; includes the package test's calibration (1.1412) and scoring job (1.1431)",
+      "aa_max_pct": 0.65,
+      "between_job_sd_pct": 0.30,
+      "rep_s": {"parent": "2.888-2.936", "fix": "2.532-2.564"},
+      "peak_vram_gb": 20.6,
+      "minutes_per_scoring": "9.4-10",
+      "minutes_calibration": 25,
+      "second_server_screen_jobs": [1.141, 1.139],
+      "transfers": {"batch_1": 1.173, "batch_32": 1.162, "top_logprobs_20": 1.157, "no_top_k": 1.002}
+    },
+    "rtx5090": {
+      "jobs": [1.224, 1.235, 1.226],
+      "jobs_note": "calibration, scoring 1, scoring 2; package unchanged; gate.json still holds the 4090 REF; a 5090 band needs at least 1 %",
+      "ref": 1.226,
+      "aa_max_pct": 0.72,
+      "aa_scoring_job": 0.998,
+      "peak_vram_gb": 27.0,
+      "minutes_per_scoring": 9,
+      "variants": [
+        {"name": "droplp", "speedup": 1.231, "verdict": "fail:exact,correct"},
+        {"name": "stalelp", "speedup": 1.222, "verdict": "fail:exact,correct"}
+      ]
+    }
+  },
+  "variants": [
+    {"name": "droplp", "speedup": 1.144, "verdict": "fail:exact,correct"},
+    {"name": "stalelp", "speedup": 1.141, "verdict": "fail:exact,correct"},
+    {"name": "fp16lp", "speedup": 1.139, "verdict": "fail:exact,correct"}
+  ],
+  "acceptance": {
+    "verdict": "PASS",
+    "host": "authors' host (2-GPU server)",
+    "calibration_ref": 1.139,
+    "aa_max_pct": 0.52,
+    "speedups": [1.1453, 1.1452],
+    "deviations": 0
+  }
+}

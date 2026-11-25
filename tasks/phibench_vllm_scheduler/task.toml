@@ -1,0 +1,49 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/phibench_vllm_scheduler"
+description = "Phi-Bench's vllm-scheduler-mixed-batch-serving task, moved from one H20 to one RTX 5090 and one RTX 4090. vLLM 0.10.1.1 serves Qwen2.5-1.5B-Instruct to concurrent bursts of short, long-prefill and long-decode requests. Score = median over 6 bursts of baseline/candidate makespan (baseline measured before and after the candidate), turned into a bounded reward against a recalibrated REF; greedy outputs must match token by token and single-request latency must not regress."
+keywords = ["vllm", "optimization", "scheduler", "continuous-batching", "mixed-batch", "phi-bench"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 5090", "RTX 4090"]
+allow_internet = false   # the image build downloads; scoring containers run with --network none
+
+[metadata.rsi_apple_bench]
+origin = "Phi-Bench"
+upstream_task = "https://github.com/one2piece2hello/faibench_LLM_Infra_Bench.git @90d7251b03f51ebf30a3ffdf0323aed764fd920e, tasks/e2e/vllm-scheduler-mixed-batch-serving"
+license = "Apache-2.0 (Phi-Bench)"
+upstream_pr = "none (the task's own oracle is a launch script)"
+selected_from = "other benchmarks screened"
+package = "environment/ (no verified package; see README, How to run it)"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/vllm-project/vllm.git"
+baseline_commit = "vllm==0.10.1.1 wheel (task image)"
+reference_fix_commit = "none: config-only launch scripts (solution/)"
+engine_version = "vllm 0.10.1.1, torch 2.7.1 (cu128 on the 5090, cu126 on the 4090), triton 3.3.1, Python 3.10"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+revision = "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median over 6 burst workloads of baseline makespan / candidate makespan; reward = clamp(ln(s/REF)/ln(REF), 0, 1)"
+reference_speedup_rtx5090 = 1.6088          # strongest config-only launch (3 scorings, busier host); 1.548-1.560 on a quieter host
+reference_speedup_rtx4090 = 1.6477          # strongest config-only launch with the task's own entry point (3 scorings)
+oracle_speedup_rtx5090 = 1.3633             # the task's oracle; 1.3443 on a quieter host
+oracle_speedup_rtx4090 = 1.3927
+author_ref_h20 = 1.2857
+band_pct = 2.0                              # suggested +-0.02 on the speedup (5090); does not cover host-load shifts
+aa_band_pct_rtx5090 = 0.53
+aa_band_pct_rtx4090 = 0.24
+gate = "greedy token-by-token match >= 0.95 on 1166 prompts; decode probe; pinned checks; sequential latency >= 0.85 of baseline; source scan of the submission"
+
+[metadata.rsi_apple_bench.measured]
+rtx5090 = { ref = 1.6088, ref_jobs = [1.6009, 1.6120, 1.6088], oracle_jobs = [1.3639, 1.3737, 1.3601, 1.3548, 1.3633], aa_max_pct = 0.53, jobs = 5, minutes_per_scoring = 22, peak_vram_mib = 29420 }
+rtx4090 = { ref = 1.6477, ref_jobs = [1.6477, 1.6464, 1.6492], oracle_jobs = [1.3931, 1.3914, 1.3924, 1.3942, 1.3927], aa_max_pct = 0.24, jobs = 5, minutes_per_scoring = 24, peak_vram_mib = 21374 }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "RTX 5090: setup works after fixes; numbers did not reproduce within +-0.02 (REF 3-4% low on a quieter host). RTX 4090: not independently tested."
+report = "docs/acceptance/batch1-5090.md"

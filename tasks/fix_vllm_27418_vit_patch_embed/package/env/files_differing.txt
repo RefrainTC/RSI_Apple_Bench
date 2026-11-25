@@ -1,0 +1,7 @@
+vllm/_version.py
+vllm/model_executor/models/glm4_1v.py
+vllm/model_executor/models/qwen2_5_vl.py
+vllm/model_executor/models/qwen2_vl.py
+vllm/model_executor/models/qwen3_omni_moe_thinker.py
+vllm/model_executor/models/qwen3_vl.py
+vllm/model_executor/models/vision.py

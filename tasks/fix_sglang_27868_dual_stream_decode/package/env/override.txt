@@ -1,0 +1,5 @@
+torch @ https://download-r2.pytorch.org/whl/cu129/torch-2.11.0%2Bcu129-cp310-cp310-manylinux_2_28_x86_64.whl
+torchaudio @ https://download-r2.pytorch.org/whl/cu129/torchaudio-2.11.0%2Bcu129-cp310-cp310-manylinux_2_28_x86_64.whl
+torchvision @ https://download-r2.pytorch.org/whl/cu129/torchvision-0.26.0%2Bcu129-cp310-cp310-manylinux_2_28_x86_64.whl
+sglang-kernel @ https://github.com/sgl-project/whl/releases/download/v0.4.3/sglang_kernel-0.4.3+cu129-cp310-abi3-manylinux2014_x86_64.whl
+cuda-bindings>=12.9.4,<13

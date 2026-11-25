@@ -1,0 +1,44 @@
+{
+  "task": "fix_vllm_13365_ngram_draft_lookup",
+  "metric": "sum of 6 timed decode reps (32 x 2048-token repeated-segment prompts, 128 greedy tokens, n-gram k=5, new prompts per rep), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.0934,
+  "band_pct": 0.5,
+  "aa_band_pct": 0.47,
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.0934, 1.0953, 1.0961, 1.0934, 1.0945, 1.0916, 1.0934],
+      "jobs_note": "7 jobs without sentinel flags: 4 on GPU1 of the 4-GPU server (m1, m2, m3, m5v2), 3 on GPU1 of the 2-GPU server",
+      "flagged_jobs": [1.0988, 1.1174, 1.0969],
+      "flagged_note": "first two during a host-load spike on both servers, third with the 2-GPU server's parent +1.8 %; all 10 jobs median 1.0949, SD 0.68 %",
+      "between_job_sd_pct": 0.15,
+      "calibration_ref": 1.0952,
+      "calibration_pair_range": [1.0905, 1.0975],
+      "aa_max_pct": 0.47,
+      "aa_outlier": 1.698,
+      "aa_outlier_note": "one calibration pair with a host stall; calib.json noise_band 0.698 is this outlier",
+      "timed_s": {"parent": 5.23, "fix": 4.78},
+      "transfers": {"random_prompts": 1.577, "late_match": 1.265, "batch_64": 1.098, "long_in_3840": 1.095},
+      "peak_vram_mib": 20008,
+      "minutes_per_scoring": 9.6,
+      "minutes_calibration": 32
+    },
+    "rtx5090": {"runs": false, "reason": "torch 2.5.1+cu124 and vLLM kernels have no sm_120 code"}
+  },
+  "variants": [
+    {"name": "C1_propose_nothing", "speedup": 0.83, "verdict": "fail:settings_mismatch,output_mismatch"},
+    {"name": "C2_k3", "speedup": 1.006, "verdict": "fail:settings_mismatch,output_mismatch"},
+    {"name": "C3_window_cap_in_propose", "speedup": 1.096, "verdict": "fail:correctness (v1 unit test only; v2 also far group)"},
+    {"name": "C4_window_cap_in_runner_v1", "speedup": 1.093, "verdict": "PASSED v1 (ties_ref, reward 0.976)"},
+    {"name": "C4_window_cap_in_runner_v2", "speedup": 1.095, "verdict": "fail:correctness (far group)"},
+    {"name": "C5_no_drafts_requested", "speedup": 0.84, "verdict": "fail:settings_mismatch,output_mismatch"},
+    {"name": "C6_n4", "speedup": 1.094, "verdict": "fail:output_mismatch (counters)"}
+  ],
+  "acceptance": {
+    "verdict": "PASS-with-fixes",
+    "calibration_ref": 1.0964,
+    "speedups": null,
+    "speedups_note": "4 jobs, median 1.0957, range 1.0926-1.0979, SD 0.21 %; individual values not listed in the report",
+    "aa_max_pct": 0.69,
+    "authors_empty_dir_test": {"calibration_ref": 1.0933, "aa_max_pct": 0.89, "speedups": [1.0998, 1.0974, 1.0885], "venv_equivalence_pair": 1.101}
+  }
+}

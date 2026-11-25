@@ -1,0 +1,155 @@
+{
+ "ref_speedup": 1.0932954897461236,
+ "fix_pairs": {
+  "n": 5,
+  "median_speedup": 1.0932954897461236,
+  "min": 1.0896768233903515,
+  "max": 1.09401786102033,
+  "values": [
+   1.0897,
+   1.0933,
+   1.0929,
+   1.094,
+   1.0939
+  ],
+  "flagged_pairs": []
+ },
+ "aa": {
+  "n": 5,
+  "median_speedup": 1.000515946660461,
+  "min": 0.9970704731618895,
+  "max": 1.0042728618132166,
+  "values": [
+   1.0005,
+   0.9997,
+   1.0043,
+   0.9971,
+   1.0017
+  ],
+  "flagged_pairs": [],
+  "max_abs_dev": 0.004272861813216622
+ },
+ "noise_band": 0.004272861813216622,
+ "overlay_equivalence_fixvenv_vs_parentvenv": {
+  "n": 1,
+  "median_speedup": 1.088515173123242,
+  "min": 1.088515173123242,
+  "max": 1.088515173123242,
+  "values": [
+   1.0885
+  ],
+  "flagged_pairs": []
+ },
+ "storage": [
+  "tmp-nvme"
+ ],
+ "mixed_storage": false,
+ "cpus": [
+  "0-7,32-39"
+ ],
+ "cache_states": [
+  "cold",
+  "warm-in-job"
+ ],
+ "parent_settings": {
+  "engine_config": "model='Qwen/Qwen2.5-1.5B-Instruct', speculative_config=None, tokenizer='Qwen/Qwen2.5-1.5B-Instruct', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, override_neuron_config=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.float16, max_seq_len=32768, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=False, kv_cache_dtype=auto,  device_config=cuda, decoding_config=DecodingConfig(guided_decoding_backend='auto', reasoning_backend=None), observability_config=ObservabilityConfig(show_hidden_metrics=False, otlp_traces_endpoint=None, collect_model_forward_time=False, collect_model_execute_time=False), seed=None, served_model_name=Qwen/Qwen2.5-1.5B-Instruct, num_scheduler_steps=1, multi_step_stream_outputs=True, enable_prefix_caching=True, chunked_prefill_enabled=True, use_async_output_proc=True, disable_mm_preprocessor_cache=False, mm_processor_kwargs=None, pooler_config=None, compilation_config={\"level\":3,\"custom_ops\":[\"none\"],\"splitting_ops\":[\"vllm.unified_attention\",\"vllm.unified_attention_with_output\"],\"use_inductor\":true,\"compile_sizes\":[],\"use_cudagraph\":true,\"cudagraph_num_of_warmups\":1,\"cudagraph_capture_sizes\":[512,504,496,488,480,472,464,456,448,440,432,424,416,408,400,392,384,376,368,360,352,344,336,328,320,312,304,296,288,280,272,264,256,248,240,232,224,216,208,200,192,184,176,168,160,152,144,136,128,120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,4,2,1],\"max_capture_size\":512}",
+  "torch_compile": true,
+  "cuda_graphs": true,
+  "kv_cache_tokens": "569,712"
+ },
+ "parent_primary": {
+  "median": 5.457506538603943,
+  "n": 15
+ },
+ "outcheck": {
+  "cal:parent_vs_parent": [
+   true,
+   true,
+   true,
+   true,
+   true
+  ],
+  "cal:fix_vs_parent": [
+   true,
+   true,
+   true,
+   true,
+   true
+  ],
+  "cal:fixvenv_vs_parentvenv": [
+   true
+  ]
+ },
+ "outcheck_detail": [
+  {
+   "pair": "01",
+   "roles": "parent_vs_parent",
+   "pass": true,
+   "identical_frac": 0.97
+  },
+  {
+   "pair": "02",
+   "roles": "parent_vs_parent",
+   "pass": true,
+   "identical_frac": 0.98
+  },
+  {
+   "pair": "03",
+   "roles": "parent_vs_parent",
+   "pass": true,
+   "identical_frac": 0.99
+  },
+  {
+   "pair": "04",
+   "roles": "parent_vs_parent",
+   "pass": true,
+   "identical_frac": 0.97
+  },
+  {
+   "pair": "05",
+   "roles": "parent_vs_parent",
+   "pass": true,
+   "identical_frac": 0.99
+  },
+  {
+   "pair": "01",
+   "roles": "fix_vs_parent",
+   "pass": true,
+   "identical_frac": 0.99
+  },
+  {
+   "pair": "02",
+   "roles": "fix_vs_parent",
+   "pass": true,
+   "identical_frac": 1.0
+  },
+  {
+   "pair": "03",
+   "roles": "fix_vs_parent",
+   "pass": true,
+   "identical_frac": 0.99
+  },
+  {
+   "pair": "04",
+   "roles": "fix_vs_parent",
+   "pass": true,
+   "identical_frac": 0.99
+  },
+  {
+   "pair": "05",
+   "roles": "fix_vs_parent",
+   "pass": true,
+   "identical_frac": 0.98
+  },
+  {
+   "pair": "01",
+   "roles": "fixvenv_vs_parentvenv",
+   "pass": true,
+   "identical_frac": 0.98
+  }
+ ],
+ "fix_output_exact_min": 0.98,
+ "out_min_exact_suggested": 0.88,
+ "calibration_flags": [],
+ "audit_events_trusted_runs": {}
+}

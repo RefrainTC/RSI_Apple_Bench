@@ -1,0 +1,606 @@
+{
+ "ref_speedup": 1.5129757289240326,
+ "fix_pairs": {
+  "n": 5,
+  "median_speedup": 1.5129757289240326,
+  "min": 1.4959005385243334,
+  "max": 1.523804537702083,
+  "values": [
+   1.4959,
+   1.5156,
+   1.5002,
+   1.5238,
+   1.513
+  ],
+  "flagged_pairs": []
+ },
+ "aa": {
+  "n": 5,
+  "median_speedup": 0.990911019761277,
+  "min": 0.9768557898080564,
+  "max": 1.013047556400423,
+  "values": [
+   0.9769,
+   1.013,
+   0.9909,
+   0.9852,
+   1.0061
+  ],
+  "flagged_pairs": [],
+  "max_abs_dev": 0.02314421019194357
+ },
+ "noise_band": 0.02314421019194357,
+ "overlay_equivalence_fixvenv_vs_parentvenv": {
+  "n": 1,
+  "median_speedup": 1.5018273200942305,
+  "min": 1.5018273200942305,
+  "max": 1.5018273200942305,
+  "values": [
+   1.5018
+  ],
+  "flagged_pairs": []
+ },
+ "storage": [
+  "tmp-nvme"
+ ],
+ "mixed_storage": false,
+ "cpus": [
+  "0-7,32-39"
+ ],
+ "cache_states": [
+  "cold",
+  "warm-in-job"
+ ],
+ "witness": {
+  "n": 20,
+  "median_residual_s": 1.0867739198729396,
+  "max_up_dev_s": 0.15334936045110226,
+  "max_down_dev_s": 1.1282668141648173,
+  "tolerance_s": 0.5,
+  "one_sided": true,
+  "residuals": [
+   1.036,
+   1.135,
+   0.965,
+   1.16,
+   1.065,
+   1.086,
+   1.096,
+   1.199,
+   1.007,
+   1.087,
+   -0.041,
+   1.24,
+   1.032,
+   1.052,
+   0.962,
+   1.139,
+   1.235,
+   0.982,
+   1.201,
+   1.18
+  ]
+ },
+ "parent_settings": {
+  "enforce_eager": false,
+  "dtype": "torch.bfloat16",
+  "quantization": "fp8",
+  "max_model_len": 8192,
+  "max_seq_len_to_capture": 8192,
+  "use_async_output_proc": true,
+  "block_size": 16,
+  "enable_prefix_caching": false,
+  "cache_dtype": "auto",
+  "gpu_memory_utilization": 0.85,
+  "num_gpu_blocks": 5287,
+  "max_num_batched_tokens": 8192,
+  "max_num_seqs": 256,
+  "chunked_prefill": false,
+  "num_scheduler_steps": 1,
+  "speculative": "None",
+  "compilation_level": 0,
+  "model_runner": "ModelRunner",
+  "attn_backend": "FLASH_ATTN",
+  "max_batchsize_to_capture": 256,
+  "captured_cuda_graph_sizes": [
+   1,
+   2,
+   4,
+   8,
+   16,
+   24,
+   32,
+   40,
+   48,
+   56,
+   64,
+   72,
+   80,
+   88,
+   96,
+   104,
+   112,
+   120,
+   128,
+   136,
+   144,
+   152,
+   160,
+   168,
+   176,
+   184,
+   192,
+   200,
+   208,
+   216,
+   224,
+   232,
+   240,
+   248,
+   256
+  ],
+  "captured_cuda_graphs": 35,
+  "_required_ok": true
+ },
+ "parent_primary": {
+  "median": 2.192634914070368,
+  "n": 15
+ },
+ "outcheck": {
+  "cal:parent_vs_parent": [
+   true,
+   true,
+   true,
+   true,
+   true
+  ],
+  "cal:fix_vs_parent": [
+   true,
+   true,
+   true,
+   true,
+   true
+  ],
+  "cal:fixvenv_vs_parentvenv": [
+   true
+  ]
+ },
+ "outcheck_detail": [
+  {
+   "pair": "01",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 0.0,
+    "graph_decode_frac_base": 0.0
+   }
+  },
+  {
+   "pair": "02",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 0.0,
+    "graph_decode_frac_base": 0.0
+   }
+  },
+  {
+   "pair": "03",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 0.0,
+    "graph_decode_frac_base": 0.0
+   }
+  },
+  {
+   "pair": "04",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 0.0,
+    "graph_decode_frac_base": 0.0
+   }
+  },
+  {
+   "pair": "05",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 0.0,
+    "graph_decode_frac_base": 0.0
+   }
+  },
+  {
+   "pair": "01",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 1.0,
+    "graph_decode_frac_base": 0.0
+   }
+  },
+  {
+   "pair": "02",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 1.0,
+    "graph_decode_frac_base": 0.0
+   }
+  },
+  {
+   "pair": "03",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 1.0,
+    "graph_decode_frac_base": 0.0
+   }
+  },
+  {
+   "pair": "04",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 1.0,
+    "graph_decode_frac_base": 0.0
+   }
+  },
+  {
+   "pair": "05",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 1.0,
+    "graph_decode_frac_base": 0.0
+   }
+  },
+  {
+   "pair": "01",
+   "roles": "fixvenv_vs_parentvenv",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true,
+   "outputs": {
+    "n": 80,
+    "exact": 80,
+    "exact_frac": 1.0,
+    "tie_divergences": 0,
+    "bad": 0,
+    "bad_sample": [],
+    "diverged": 0,
+    "first_div_step_median": null,
+    "max_gap_nats": null,
+    "not_in_top5": 0
+   },
+   "steps": {
+    "hooks_cand": [
+     "execute_model"
+    ],
+    "hooks_base": [
+     "execute_model"
+    ],
+    "pass": true,
+    "reps_mismatched": [],
+    "steps_per_rep_cand": [
+     129
+    ],
+    "steps_per_rep_base": [
+     129
+    ],
+    "graph_decode_frac_cand": 1.0,
+    "graph_decode_frac_base": 0.0
+   }
+  }
+ ],
+ "fix_output_exact_min": 1.0,
+ "out_min_exact_suggested": 0.9,
+ "calibration_flags": [],
+ "audit_events_trusted_runs": {},
+ "outcheck_thresholds": {
+  "tie_nats": 0.125,
+  "min_exact": 1.0,
+  "min_first_div_median": 0,
+  "basis": {
+   "benign_runs": 22,
+   "fix_passes": 6,
+   "parent_passes": 16,
+   "max_benign_gap_nats": 0.0,
+   "fix_exact_frac_min": 1.0,
+   "fix_exact_frac_max": 1.0,
+   "binomial_se": 0.0,
+   "fix_first_div_median_min": null,
+   "fix_not_in_top5_max": 0,
+   "parent_exact_frac_min": 1.0,
+   "fix_vs_first_fix": {
+    "cal_ab01_1_fix": "first",
+    "cal_ab02_2_fix": 80,
+    "cal_ab03_1_fix": 80,
+    "cal_ab04_2_fix": 80,
+    "cal_ab05_1_fix": 80,
+    "cal_xv01_1_fixvenv": 80
+   }
+  }
+ }
+}

@@ -1,0 +1,42 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_vllm_37338_cold_start_autotune"
+description = "Cold start of vLLM 0.18 with Qwen3.5-4B: with every compile cache empty, the time from launching the Python process to the first generate() result is longer than it needs to be, and the first batch alone takes tens of seconds. Scored on that cold time to first result (8 prompts x 512 tokens -> 8 tokens), against the unmodified tree in interleaved pairs on one RTX 4090. Outputs are checked by counts, settings and a teacher-forced re-read; audit, venv-snapshot and cold-compile checks stop compiled state from being brought along or kept between runs."
+keywords = ["vllm", "optimization", "cold-start", "triton", "autotune", "qwen3.5", "offline"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090", "RTX 5090"]
+allow_internet = false   # setup (package/RUN.md steps 2-4) downloads wheels and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "vLLM history"
+upstream_pr = "https://github.com/vllm-project/vllm/pull/37338"
+selected_from = "mined fix list, batch 4"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/vllm-project/vllm.git"
+baseline_commit = "54ab804e87dd534c0a8cb8ad8eec7ad5d75775ae"
+reference_fix_commit = "a16133a0f12e8e406206be1bc8041727d9f1ea7d"
+engine_version = "vllm 0.18.1rc1.dev37 (parent wheel from wheels.vllm.ai; fix is dev38), torch 2.10.0+cu128, triton 3.6.0"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen3.5-4B"
+revision = "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "cold time to first result (process launch -> first generate() returned, all compile caches empty), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.29
+band_pct = 2.0
+aa_band_pct = 3.0
+gate = "counts; resolved engine config equal; teacher-forced re-read (gap <= 1.0 nat, <= 2 % of tokens > 0.5); audit (only .py may differ, no cache names, blobs or env writes); venv unchanged by the run; >= 100 Triton kernels compiled into the run's own empty cache; steady reps and shutdown not slower beyond a bound"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.29, aa_max_pct = 2.5, jobs = 10, minutes_per_scoring = "24-27" }
+rtx5090 = { ref = 1.178, aa_max_pct = 0.57, jobs = 3, minutes_per_scoring = "36", note = "median of the three 5090 jobs; the cold start is CPU-bound and that host has a Ryzen 9 3950X; teacher-forced pass peaks at 30.1 GB; package/harness/gate.json still holds the 4090 REF" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS"
+report = "docs/acceptance/batch4.md"

@@ -1,0 +1,41 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_vllm_27418_vit_patch_embed"
+description = "Image requests to Qwen2-VL-2B-Instruct on vLLM take longer than one RTX 4090 needs. The load sends one large (1344 x 1344) image per request, four requests one after another per rep, 8 greedy tokens each; scored on the median rep wall time against the unmodified tree in interleaved pairs on the same GPU. Outputs are checked by token and image-token counts, resolved engine config, a teacher-forced re-read by the unmodified engine with the real image, and an exact text-only pass."
+keywords = ["vllm", "regression", "multimodal", "vision-encoder", "qwen2-vl", "prefill", "offline"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]
+allow_internet = false   # setup (package/RUN.md steps 2-4) downloads wheels, the lock, one sdist, one git package and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "vLLM history"
+upstream_pr = "https://github.com/vllm-project/vllm/pull/27418"
+selected_from = "mined fix list, batch 5 (candidate C77; no gain on the prior's load, passed on a second load whose prior was written before it ran)"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/vllm-project/vllm.git"
+baseline_commit = "88d3141ec63008d8dff63311359355ebbe98ad64"
+reference_fix_commit = "42efe609ba75eb1b0bc06ae635778b2bc0aa4e7a"
+engine_version = "vLLM 0.11.1rc3.dev49 (per-commit wheel), torch 2.9.0+cu128 with cuDNN 9.10, triton 3.5.0, transformers 4.57.1, flashinfer-python 0.4.1, Python 3.10"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2-VL-2B-Instruct"
+revision = "1860c46f12b7449d0f5b426a7474ab715342bc65"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median rep wall time over 5 reps (4 sequential generate() calls, one 1344 x 1344 image each, 8 greedy tokens), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.69
+band_pct = 3.0
+aa_band_pct = 5.0
+gate = "tolerance: output and image-token counts; resolved vllm_config (num_gpu_blocks ignored); teacher-forced re-read by the parent of every timed output and an 8-image pass (no token more than 1.0 nat below the parent's top-1, at most 2 % of tokens more than 0.5 nats below); 24 text-only prompts bit-identical"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.69, aa_max_pct = 3.6, jobs = 10, minutes_per_scoring = 11 }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS-with-fixes"
+report = "docs/acceptance/batch5.md"

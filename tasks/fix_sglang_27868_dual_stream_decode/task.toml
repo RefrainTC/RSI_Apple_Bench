@@ -1,0 +1,42 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_sglang_27868_dual_stream_decode"
+description = "Small-batch decode of Qwen3.5-4B on SGLang is a few percent slower than the GPU allows. Scored on the median wall time of one offline generate() call (4 requests x 256 prompt tokens -> 512 greedy tokens, decode in CUDA graphs) against the unmodified tree in interleaved pairs on one RTX 4090. The gate is exact: every output token and logprob must equal the unmodified engine's."
+keywords = ["sglang", "regression", "decode", "cuda-graphs", "qwen3.5", "gated-deltanet", "offline"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090", "RTX 5090"]   # RTX 5090 only with a CUDA 12.9 nvcc tree for FlashInfer's JIT (see README)
+allow_internet = false   # setup (package/RUN.md steps 2-5) downloads wheels, sources, CUDA pieces and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "SGLang history"
+upstream_pr = "https://github.com/sgl-project/sglang/pull/27868"
+selected_from = "mined fix list, batch 4"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/sgl-project/sglang.git"
+baseline_commit = "09e9c4fde3b4326c4a66fbb014d9c7a6b8995b30"
+reference_fix_commit = "d5899b95c4d54db58d5412b9ce0cc487b212d9a0"
+engine_version = "SGLang source at the parent commit (2026-06, built from python/), torch 2.11.0+cu129, sglang-kernel 0.4.3+cu129, flashinfer 0.6.12, triton 3.6.0"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen3.5-4B"
+revision = "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median wall time of 3 generate() calls (4 x 256 -> 512 tokens), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.0276
+band_pct = 0.5
+aa_band_pct = 1.0
+gate = "exact: every timed rep's digest (output ids + text) equals the parent's; token counts; live ServerArgs equal (ports aside); correctness pass of 24 fixed prompts, one per call, ids identical and logprobs within 1e-3"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.0276, aa_max_pct = 0.7, jobs = 9, minutes_per_scoring = "9-11" }
+rtx5090 = { ref = 1.058, aa_max_pct = 0.56, jobs = 3, minutes_per_scoring = "8.4", note = "median of the three 5090 jobs, run with a CUDA 12.9.1 nvcc/cudart/cccl tree instead of the package's CUDA 12.8; the 4090 band (0.5 %) is too tight there, a 5090 gate needs at least 1 %; package/harness/gate.json still holds the 4090 REF" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS"
+report = "docs/acceptance/batch4.md"

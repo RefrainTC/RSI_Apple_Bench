@@ -1,0 +1,64 @@
+{
+ "workloads": [
+  {
+   "name": "hc_1024_64",
+   "input_len": 1024,
+   "output_len": 64,
+   "num_prompts": 256,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c128",
+     "concurrency": 128,
+     "num_prompts": 256
+    }
+   ],
+   "warmup": {
+    "num_prompts": 32,
+    "output_len": 16,
+    "concurrency": 32
+   }
+  },
+  {
+   "name": "hc_128_128",
+   "input_len": 128,
+   "output_len": 128,
+   "num_prompts": 512,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c256",
+     "concurrency": 256,
+     "num_prompts": 512
+    }
+   ],
+   "warmup": {
+    "num_prompts": 64,
+    "output_len": 16,
+    "concurrency": 64
+   }
+  },
+  {
+   "name": "hc_2048_256",
+   "input_len": 2048,
+   "output_len": 256,
+   "num_prompts": 128,
+   "metric": "request_throughput",
+   "runs_per_round": 1,
+   "profiles": [
+    {
+     "name": "c64",
+     "concurrency": 64,
+     "num_prompts": 128
+    }
+   ],
+   "warmup": {
+    "num_prompts": 16,
+    "output_len": 16,
+    "concurrency": 16
+   }
+  }
+ ]
+}

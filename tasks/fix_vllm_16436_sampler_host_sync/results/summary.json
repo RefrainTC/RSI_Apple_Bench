@@ -1,0 +1,44 @@
+{
+  "task": "fix_vllm_16436_sampler_host_sync",
+  "metric": "client-side median TPOT of vllm bench serve (100 prompts, 1000 in / 100 out, 1 req/s), parent / candidate; job = median of 2 ABBA pairs",
+  "reference_speedup": 1.0855,
+  "band_pct": 1.0,
+  "aa_band_pct": 0.43,
+  "gpus": {
+    "rtx4090": {
+      "jobs": null,
+      "jobs_note": "7 scoring jobs on the 4-GPU server (4 on GPU0, 3 on GPU1): median 1.0855, range 1.0816-1.0957; per-job values are not itemized in the sources",
+      "n_jobs": 7,
+      "between_job_sd_pct": 0.54,
+      "parent_tpot_drift_sd_pct": 0.29,
+      "calibration_ref": 1.093,
+      "calibration_pair_range": [1.090, 1.094],
+      "aa_max_pct": {"gpu0_5_pairs": 0.43, "gpu1_3_pairs": 1.07, "gpu2_3_pairs": 0.54},
+      "cross_gpu_study_gpu2": [1.0889, 1.0924],
+      "second_server_jobs": [1.0833, 1.0863, 1.0934],
+      "median_tpot_ms": {"parent": 5.45, "fix": 5.00},
+      "transfers": {"rate_4": 1.08, "rate_unlimited": 1.12, "output_400": 1.08},
+      "peak_vram_mib": null,
+      "minutes_per_scoring": 19,
+      "minutes_calibration": 73
+    },
+    "rtx5090": {"runs": false, "reason": "pinned torch 2.6.0+cu124 has no sm_120 code (not attempted)"}
+  },
+  "variants": [
+    {"name": "C1_truncate_50", "speedup": null, "verdict": "fail:output"},
+    {"name": "C2_buffer_stream", "speedup": 761, "verdict": "fail:ttft_regression"},
+    {"name": "C4r_skip_cuda_graphs", "speedup": null, "verdict": "fail:settings"},
+    {"name": "C6_skip_penalties", "speedup": null, "verdict": "fail:output"},
+    {"name": "C7g_reference_path", "speedup": null, "verdict": "gate_reject"},
+    {"name": "C7_read_reference_at_startup", "speedup": null, "verdict": "fail:audit (12 protected reads)"},
+    {"name": "C3w_rewrite_client_result", "speedup": 1.093, "verdict": "no effect, no flag (cause not checked)"}
+  ],
+  "acceptance": {
+    "verdict": "not yet (no independent rebuild)",
+    "authors_empty_dir_test": {
+      "first_copy": {"calibration_ref": 1.0871, "speedups": [1.0910, 1.0857], "verdict": "void: venv_changed (missing bytecode)"},
+      "second_copy": {"calibration_ref": 1.0922, "aa_max_pct": 0.71, "speedups": [1.0810], "pristine_aa_job": 0.9974},
+      "packaging_defects_fixed": ["bytecode pre-compilation at setup", "post-calibration step missing from RUN.md", "env.sh let site.env override the caller's GPU/CPUS/PORT"]
+    }
+  }
+}

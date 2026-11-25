@@ -1,0 +1,40 @@
+{
+ "name": "qwen35_4b_1x4090",
+ "model_dir": "/tmp/taskc_stage/models/qwen3.5-4b",
+ "served_name": "qwen3.5-4b",
+ "gpus": "1",
+ "cpus": "32-55",
+ "client_cpus": "56-63",
+ "locked_args": [
+  "--max-model-len",
+  "16384",
+  "--gpu-memory-utilization",
+  "0.85",
+  "--no-enable-prefix-caching",
+  "--tensor-parallel-size",
+  "1",
+  "--dtype",
+  "auto",
+  "--seed",
+  "0",
+  "--kv-cache-dtype",
+  "auto"
+ ],
+ "base_args": [],
+ "base_env": {},
+ "gpu_mem_kill_mib": 23800,
+ "ready_timeout_s": 1200,
+ "apple_source": "optimize_qwen3_6_27b_1xh100_open (vLLM 0.20.1, Qwen3.6-27B, 1xH100)",
+ "storage": "local NVMe: venv, weights, overlay and caches under $P3_STAGE; results under $P3_ROOT",
+ "venv": "/tmp/taskc_stage/venv",
+ "scratch": "/tmp/taskc_stage/run",
+ "stage_script": "/opt/rsi/taskc/scripts/stage_tmp.sh",
+ "model_dir_nas": "/opt/rsi/taskc/src/models/qwen3.5-4b",
+ "log_sentinels": [
+  {
+   "pattern": "Setting attention block size to (\\d+) tokens",
+   "min": 528,
+   "why": "GDN state stored below fp32 (attention block < 528 tokens)"
+  }
+ ]
+}

@@ -1,0 +1,45 @@
+diff --color -ru task/solution/oracle_v2_launch_server.sh task_mem085/solution/oracle_v2_launch_server.sh
+--- task/solution/oracle_v2_launch_server.sh	2026-11-21 15:16:18.937719256 +0400
++++ task_mem085/solution/oracle_v2_launch_server.sh	2026-11-21 16:08:34.694803290 +0400
+@@ -13,7 +13,7 @@
+ export VLLM_USE_V1="${VLLM_USE_V1:-1}"
+ exec python3 -m vllm.entrypoints.openai.api_server \
+     --model "$MODEL_PATH" --served-model-name default --host 0.0.0.0 --port "$PORT" \
+-    --tensor-parallel-size 1 --dtype bfloat16 --gpu-memory-utilization 0.88 \
++    --tensor-parallel-size 1 --dtype bfloat16 --gpu-memory-utilization 0.85 \
+     --max-model-len 8192 --max-num-seqs 128 --max-num-batched-tokens 8192 \
+     --enable-chunked-prefill --enable-prefix-caching --disable-log-requests \
+     --trust-remote-code --async-scheduling --api-server-count 4
+diff --color -ru task/submission/launch_server.sh task_mem085/submission/launch_server.sh
+--- task/submission/launch_server.sh	2026-11-21 15:16:18.937719256 +0400
++++ task_mem085/submission/launch_server.sh	2026-11-21 16:08:34.696892113 +0400
+@@ -36,7 +36,7 @@
+     --port "$PORT" \
+     --tensor-parallel-size 1 \
+     --dtype bfloat16 \
+-    --gpu-memory-utilization 0.88 \
++    --gpu-memory-utilization 0.85 \
+     --max-model-len 8192 \
+     --max-num-seqs 32 \
+     --disable-log-requests \
+diff --color -ru task/tests/launch_baseline.sh task_mem085/tests/launch_baseline.sh
+--- task/tests/launch_baseline.sh	2026-11-21 15:16:18.938375245 +0400
++++ task_mem085/tests/launch_baseline.sh	2026-11-21 16:08:34.692928221 +0400
+@@ -18,7 +18,7 @@
+ #   * every OTHER knob this baseline sets is either already the vLLM default (`enforce_eager`
+ #     False, `async_scheduling` False) or a correctness/capacity requirement rather than a
+ #     scheduling optimisation (`--dtype bfloat16`, `--max-model-len 8192`,
+-#     `--gpu-memory-utilization 0.88` vs the 0.9 default is a *reduction*, i.e. conservative).
++#     `--gpu-memory-utilization 0.85` vs the 0.9 default is a *reduction*, i.e. conservative).
+ #   * chunked prefill and prefix caching STAY ON, so the baseline remains a competent server a
+ #     reasonable engineer would ship — it is not degraded into the naive starter.
+ # Chosen value 64 rather than 32: at 32 the SHIPPED STARTER measures median-of-6 = 1.0101 > 1,
+@@ -58,7 +58,7 @@
+     --port "$PORT" \
+     --tensor-parallel-size 1 \
+     --dtype bfloat16 \
+-    --gpu-memory-utilization 0.88 \
++    --gpu-memory-utilization 0.85 \
+     --max-model-len 8192 \
+     --max-num-seqs 64 \
+     --max-num-batched-tokens 8192 \

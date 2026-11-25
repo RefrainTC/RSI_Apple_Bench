@@ -1,0 +1,45 @@
+{
+  "task": "fix_sglang_14956_mrope_text_sync",
+  "family": "fix_sglang_9460_mrope_decode_sync",
+  "metric": "median rep wall time over 5 reps (64 text-only requests x 128 random ids -> 256 greedy tokens in one call), parent / candidate; job = median of 3 ABBA pairs",
+  "reference_speedup": 1.31,
+  "band_pct": 2.0,
+  "aa_band_pct": 2.0,
+  "gate": "exact: counts, live ServerArgs (ports ignored), timed-rep digests, 24-prompt text pass with logprobs and top-5",
+  "gpus": {
+    "rtx4090": {
+      "jobs": [1.3217, 1.3045, 1.3095, 1.3070],
+      "jobs_note": "4-GPU server: calibration GPU2, scoring GPU3, empty-directory calibration and scoring GPU2; all ties_ref",
+      "between_job_sd_pct": 0.6,
+      "aa_max_pct": 1.4,
+      "aa_max_pct_note": "1.4 (calibration), 0.9 (empty-directory calibration)",
+      "median_rep_s": {"parent": "2.10-2.13", "fix": "1.603-1.612"},
+      "peak_vram_gb": 20.5,
+      "minutes_per_scoring": 7.5,
+      "minutes_calibration": 19,
+      "minutes_setup": "13-17",
+      "transfers": {"b8_text": 1.085, "img_negative_control": 1.007},
+      "second_server": {
+        "host": "2-GPU server",
+        "screen": 1.31,
+        "screen_aa_max_pct": 0.5,
+        "short_abba_jobs": [1.3132, 1.3100, 1.3090, 1.3115],
+        "screen_img_negative_control": 0.997
+      }
+    }
+  },
+  "variants": [
+    {"name": "short", "speedup": 1.65, "verdict": "fail:counts,exact"},
+    {"name": "offby1", "speedup": 1.30, "verdict": "fail:exact,correct"},
+    {"name": "multistep", "speedup": 1.31, "verdict": "fail:settings", "note": "outputs identical; only the settings check sees it"}
+  ],
+  "acceptance": {
+    "verdict": "PASS",
+    "host": "2-GPU server (a second server; the package was calibrated on the 4-GPU server)",
+    "speedups": [1.3068, 1.3073, 1.3056, 1.3061],
+    "speedups_note": "calibration, then three scoring jobs; all ties_ref",
+    "aa_max_pct": 0.36,
+    "variants_same_verdict": "3 of 3",
+    "deviations": 0
+  }
+}

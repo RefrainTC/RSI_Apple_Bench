@@ -1,0 +1,5 @@
+commit=54ab804e87dd534c0a8cb8ad8eec7ad5d75775ae
+url=https://wheels.vllm.ai/54ab804e87dd534c0a8cb8ad8eec7ad5d75775ae/vllm-0.18.1rc1.dev37%2Bg54ab804e8-cp38-abi3-manylinux_2_31_x86_64.whl
+sha256=14c2c45d6d8c359d382f65782d91d274c732038372f53c7286379ad3f322be6b
+file=vllm-0.18.1rc1.dev37+g54ab804e8-cp38-abi3-manylinux_2_31_x86_64.whl
+cudart=[b'libcudart.so.12']

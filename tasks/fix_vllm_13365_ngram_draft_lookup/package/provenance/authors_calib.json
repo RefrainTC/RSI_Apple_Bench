@@ -1,0 +1,223 @@
+{
+ "ref_speedup": 1.0952041689120968,
+ "fix_pairs": {
+  "n": 5,
+  "median_speedup": 1.0952041689120968,
+  "min": 1.0905011023349735,
+  "max": 1.0975222473709045,
+  "values": [
+   1.096,
+   1.0921,
+   1.0905,
+   1.0952,
+   1.0975
+  ],
+  "flagged_pairs": []
+ },
+ "aa": {
+  "n": 5,
+  "median_speedup": 1.0010220316380616,
+  "min": 0.9996886356495132,
+  "max": 1.6980823526805904,
+  "values": [
+   1.0033,
+   1.001,
+   1.0008,
+   1.6981,
+   0.9997
+  ],
+  "flagged_pairs": [],
+  "max_abs_dev": 0.6980823526805904
+ },
+ "noise_band": 0.6980823526805904,
+ "overlay_equivalence_fixvenv_vs_parentvenv": {
+  "n": 1,
+  "median_speedup": 1.0914553797193882,
+  "min": 1.0914553797193882,
+  "max": 1.0914553797193882,
+  "values": [
+   1.0915
+  ],
+  "flagged_pairs": []
+ },
+ "storage": [
+  "tmp-nvme"
+ ],
+ "mixed_storage": false,
+ "cpus": [
+  "8-15,40-47"
+ ],
+ "cache_states": [
+  "cold",
+  "warm-in-job"
+ ],
+ "witness": {
+  "n": 20,
+  "median_residual_s": 3.682252843864262,
+  "max_up_dev_s": 2.712879031896591,
+  "max_down_dev_s": 9.552910882048309,
+  "tolerance_s": 8.138637095689774,
+  "one_sided": true,
+  "residuals": [
+   3.522,
+   3.719,
+   3.342,
+   3.879,
+   3.486,
+   3.631,
+   -5.871,
+   3.938,
+   3.647,
+   3.651,
+   6.395,
+   3.969,
+   3.67,
+   5.54,
+   5.907,
+   3.694,
+   3.158,
+   5.53,
+   6.126,
+   3.372
+  ]
+ },
+ "parent_settings": {
+  "spec_num_speculative_tokens": 5,
+  "spec_ngram_min": 3,
+  "spec_ngram_max": 4,
+  "spec_draft_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "dtype": "torch.bfloat16",
+  "max_model_len": 4096,
+  "enforce_eager": false,
+  "seed": 0,
+  "block_size": 16,
+  "enable_prefix_caching": true,
+  "gpu_memory_utilization": 0.8,
+  "max_num_seqs": 1024,
+  "max_num_batched_tokens": 8192,
+  "chunked_prefill": true,
+  "compilation_level": 3,
+  "use_cudagraph": true,
+  "n_cudagraph_capture_sizes": 67,
+  "vllm_use_v1": true,
+  "v1_multiprocessing": false,
+  "engine_core_client": "InprocClient",
+  "hooks": "core,frontend,config",
+  "live_use_spec_decode": true,
+  "live_drafter": "NgramProposer",
+  "live_k": 5,
+  "live_nmin": 3,
+  "live_nmax": 4,
+  "live_use_cuda_graph": true,
+  "live_n_cudagraph_sizes": 67,
+  "live_max_num_reqs": 1024,
+  "live_scheduler": "Scheduler",
+  "max_proposal_seen": 5,
+  "_required_ok": true
+ },
+ "parent_primary": {
+  "median": 5.2317151399329305,
+  "n": 15
+ },
+ "outcheck": {
+  "cal:parent_vs_parent": [
+   true,
+   true,
+   true,
+   true,
+   true
+  ],
+  "cal:fix_vs_parent": [
+   true,
+   true,
+   true,
+   true,
+   true
+  ],
+  "cal:fixvenv_vs_parentvenv": [
+   true
+  ]
+ },
+ "outcheck_detail": [
+  {
+   "pair": "01",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  },
+  {
+   "pair": "02",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  },
+  {
+   "pair": "03",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  },
+  {
+   "pair": "04",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  },
+  {
+   "pair": "05",
+   "roles": "parent_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  },
+  {
+   "pair": "01",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  },
+  {
+   "pair": "02",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  },
+  {
+   "pair": "03",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  },
+  {
+   "pair": "04",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  },
+  {
+   "pair": "05",
+   "roles": "fix_vs_parent",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  },
+  {
+   "pair": "01",
+   "roles": "fixvenv_vs_parentvenv",
+   "ref": "calib_ref",
+   "pass": true,
+   "parent_matches_ref": true
+  }
+ ],
+ "calibration_flags": [],
+ "audit_events_trusted_runs": {}
+}

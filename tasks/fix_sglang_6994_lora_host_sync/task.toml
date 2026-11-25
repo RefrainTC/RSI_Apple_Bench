@@ -1,0 +1,42 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_sglang_6994_lora_host_sync"
+description = "Offline SGLang 0.4.7 serves 64 LoRA requests (Qwen2.5-1.5B-Instruct + a rank-16 adapter) x 256 greedy tokens at decode batch 64 inside CUDA graphs, and each decode step costs several milliseconds more than this GPU needs. Scored on the median wall time of 5 timed generate() calls, each on new prompts, against the unmodified tree in interleaved ABBA pairs on one RTX 4090. Outputs are checked by a bit-identical text-prompt correctness pass and token counts per rep; there is no agent-facing gate."
+keywords = ["sglang", "optimization", "lora", "host-sync", "decode", "offline"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]
+allow_internet = false   # setup (package/RUN.md steps 2-4) downloads sources, wheels and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "SGLang history"
+upstream_pr = "https://github.com/sgl-project/sglang/pull/6994"
+selected_from = "ISO-Bench list, screen batch 3 (written prior P = 0.30)"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/sgl-project/sglang.git"
+baseline_commit = "777688b8929c877e4e28c2eac208d776abe4c3af"
+reference_fix_commit = "021f76e4f49861b2e9ea9ccff06a46d577e3c548"
+engine_version = "SGLang 0.4.7 (python/ built from the commit's source tarball), torch 2.7.1+cu126, sgl-kernel 0.1.7, triton 3.3.1; flashinfer-python left out"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2.5-1.5B-Instruct"
+revision = "989aa7980e4cf806f80c7fef2b1adb7bc71aa306"
+adapters = "two random-weight rank-16 LoRA adapters made by package/b3/bench/make_lora.py (seeds 0 and 1), sha256-checked"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median wall time of 5 timed Engine.generate() calls (64 requests x 256 random tokens, adapter lora0, 256 greedy tokens, new prompts per call), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.474
+band_pct = 1.1
+aa_band_pct = 1.15
+gate = "no automatic gate: cal_analyze.py reports a correctness pass (24 text prompts, fix vs parent bit-identical token ids) and per-rep output token counts vs the paired parent; per-rep text sha is reported but not required (not reproducible even parent vs parent)"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.474, aa_max_pct = 1.15, jobs = 8, minutes_per_scoring = 4.5, note = "4 cards on two servers; card offset up to ~1.3 %, from the fix side" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS-with-fixes"
+report = "docs/acceptance/batch2.md"

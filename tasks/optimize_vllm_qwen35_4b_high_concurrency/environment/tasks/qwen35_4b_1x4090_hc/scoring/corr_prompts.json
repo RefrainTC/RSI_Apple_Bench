@@ -1,0 +1,22 @@
+[
+"The capital of France is",
+"Write a Python function that returns the n-th Fibonacci number using iteration.\n\ndef fib(n):",
+"Explain in two sentences why the sky appears blue during the day.",
+"Q: A train travels 120 km in 1.5 hours. What is its average speed in km/h?\nA:",
+"Translate to German: 'The weather is nice today and we are going to the park.'",
+"List three prime numbers greater than 50:",
+"Once upon a time, in a small village by the sea, there lived an old fisherman who",
+"SELECT name, COUNT(*) FROM orders GROUP BY name HAVING",
+"The derivative of sin(x) * x^2 with respect to x is",
+"In computer networking, the difference between TCP and UDP is that",
+"def quicksort(arr):\n    if len(arr) <= 1:\n        return arr\n",
+"Summarize the plot of Romeo and Juliet in one paragraph.",
+"1, 1, 2, 3, 5, 8, 13, 21,",
+"The main components of a CPU are",
+"Ein kurzer Satz \u00fcber das Meer:",
+"Write a haiku about autumn leaves.",
+"<html>\n<head>\n<title>My page</title>\n</head>\n<body>\n",
+"The theory of general relativity predicts that",
+"Water boils at 100 degrees Celsius at sea level because",
+"A good name for a black cat would be"
+]

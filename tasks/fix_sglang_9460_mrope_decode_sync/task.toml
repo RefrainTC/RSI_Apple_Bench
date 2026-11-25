@@ -1,0 +1,41 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_sglang_9460_mrope_decode_sync"
+description = "Batched image-and-text generation with Qwen2-VL-2B-Instruct on SGLang decodes more slowly than the GPU allows. Scored on the median wall time of one offline generate() call of 64 requests (one 224 x 224 image + a short prompt each, 256 greedy tokens), against the unmodified tree in interleaved pairs on one RTX 4090. Outputs are checked by token counts, settings readback, a bit-exact batch-1 correctness pass and a teacher-forced re-read by the unmodified model."
+keywords = ["sglang", "optimization", "multimodal", "vision-language", "m-rope", "decode", "offline"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]   # does not run on RTX 5090: the pinned sgl-kernel 0.3.8 has no sm_120 code
+allow_internet = false     # setup (package/RUN.md steps 2-4) downloads wheels, sources and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "SGLang history"
+upstream_pr = "https://github.com/sgl-project/sglang/pull/9460"
+selected_from = "mined fix list, batch 4"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/sgl-project/sglang.git"
+baseline_commit = "5e19b159b02ae1b519ce6c3a0d1e7ff04ab9fcd5"
+reference_fix_commit = "4ed9053ecffb910c87d6c0db4ef64a7c54aa099b"
+engine_version = "SGLang 0.5.2rc1 (built from python/ at the parent commit), torch 2.8.0+cu128, sgl-kernel 0.3.8, triton 3.4.0"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen2-VL-2B-Instruct"
+revision = "1860c46f12b7449d0f5b426a7474ab715342bc65"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median wall time of 5 generate() calls (64 requests x (224 px image + prompt) -> 256 tokens), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.203
+band_pct = 1.5
+aa_band_pct = 3.0
+gate = "token counts per rep; live ServerArgs equal (ports aside); correctness pass of 16 fixed prompts sent one at a time, bit-exact (logprobs within 1e-3); teacher-forced re-read by the parent in HF transformers: every token within 3.0 nats of the top-1 and at most 5e-4 of tokens per run with gap > 0.5"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.203, aa_max_pct = 1.9, jobs = 8, minutes_per_scoring = "8-9" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS"
+report = "docs/acceptance/batch4.md"

@@ -1,0 +1,41 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_vllm_35442_spec_accept_count_copy"
+description = "Batch-1 decoding of Qwen3.5-4B with MTP speculative decoding (one draft token) on vLLM is slower than one RTX 4090 delivers. Scored on the median rep wall time of one 256-token request generating 512 greedy tokens, against the unmodified tree in interleaved pairs on the same GPU. Outputs must be bit-identical to the unmodified engine's: token counts, resolved engine config, timed-rep digests and a 24-prompt natural-text pass with logprobs."
+keywords = ["vllm", "regression", "speculative-decoding", "mtp", "hybrid-model", "host-sync", "decode", "offline"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]
+allow_internet = false   # setup (package/RUN.md steps 2-4) downloads wheels, the dependency lock and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "vLLM history"
+upstream_pr = "https://github.com/vllm-project/vllm/pull/35442"
+selected_from = "mined fix list, batch 5 (candidate C15; task uses the screen's batch-1 transfer load, not the prior's 4-request load)"
+package = "package/RUN.md"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/vllm-project/vllm.git"
+baseline_commit = "4beebfd14650b1c6a687e7ab496d501423a0e50d"
+reference_fix_commit = "ad9d09e2b8a601b50d07c76fb8736c2bbda2d6fb"
+engine_version = "vLLM 0.16.1rc1.dev176 (per-commit wheel), torch 2.10.0 (CUDA 12.8 build), triton 3.6.0, flashinfer 0.6.4, transformers 4.57.6, Python 3.10"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "Qwen/Qwen3.5-4B"
+revision = "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median rep wall time over 3 reps (1 request x 256 random ids -> 512 greedy tokens), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.037
+band_pct = 1.0
+aa_band_pct = 1.0
+gate = "exact: output token counts, resolved vllm_config (num_gpu_blocks ignored), sha256 digest of every timed rep, and a 24-prompt natural-text pass (64 tokens, ids identical and logprobs within 1e-3 nats of the same job's parent pass)"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.037, aa_max_pct = 0.44, aa_max_pct_independent = 1.42, jobs = 10, minutes_per_scoring = "13-16" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS-with-fixes"
+report = "docs/acceptance/batch5.md"

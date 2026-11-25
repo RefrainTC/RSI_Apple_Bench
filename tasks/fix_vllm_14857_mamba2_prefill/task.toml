@@ -1,0 +1,42 @@
+schema_version = "1.2"
+
+[task]
+name = "rsi-apple-bench/fix_vllm_14857_mamba2_prefill"
+description = "Offline vLLM 0.8.2 (V0) runs the Mamba2 hybrid Bamba-9B (FP8 at load) on a prefill-heavy job, 512 prompts of 64 random tokens x 8 greedy tokens, and each prefill step costs more than this GPU needs. Scored on the median wall time of 5 timed generate() calls, each on new prompts, against the unmodified tree in interleaved ABBA pairs on one RTX 4090. Outputs are bit-identical to the parent's and checked per rep; there is no agent-facing gate."
+keywords = ["vllm", "optimization", "mamba2", "prefill", "host-sync", "offline", "hybrid"]
+
+[environment]
+gpus = 1
+gpu_types = ["RTX 4090"]
+allow_internet = false   # setup (package/RUN.md steps 2-4) downloads wheels, CPython and the model; scoring runs offline
+
+[metadata.rsi_apple_bench]
+origin = "vLLM history"
+upstream_pr = "https://github.com/vllm-project/vllm/pull/14857"
+selected_from = "ISO-Bench list, screen batch 3 (written prior P = 0.35)"
+package = "package/RUN.md"
+duplicate = "vLLM #14778 (https://github.com/vllm-project/vllm/pull/14778), the first landing of the same change, later reverted; packaged separately as iso14778"
+
+[metadata.rsi_apple_bench.target]
+repo = "https://github.com/vllm-project/vllm.git"
+baseline_commit = "0032903a5bb7c7c655f52f4efdfcc221947e9ca8"
+reference_fix_commit = "296f927f2493908984707354e3cc5d7b2e41650b"
+engine_version = "vLLM 0.8.2.dev41 (V0 engine for Mamba2 models, per-commit wheels), torch 2.6.0+cu124, xgrammar 0.1.17 override"
+
+[metadata.rsi_apple_bench.model]
+hf_model_id = "ibm-ai-platform/Bamba-9B"
+revision = "50ec8766310eae056e05e42ba70df45645912e1e"
+
+[metadata.rsi_apple_bench.scoring]
+metric = "median wall time of 5 timed generate() calls (512 x 64 random tokens, 8 greedy tokens, new prompts per call), parent / candidate; job speedup = median of 3 ABBA pairs"
+reference_speedup = 1.0648
+band_pct = 0.5
+aa_band_pct = 0.33
+gate = "no automatic gate: cal_analyze.py reports a correctness pass (24 text prompts, token ids identical to the parent) and, per timed rep, output token counts and the sha256 of all output ids vs the paired parent (exact)"
+
+[metadata.rsi_apple_bench.measured]
+rtx4090 = { ref = 1.0648, aa_max_pct = 0.33, jobs = 7, minutes_per_scoring = 9.5, note = "4 cards on two servers, no host offset in the ratio" }
+
+[metadata.rsi_apple_bench.acceptance]
+independent = "PASS-with-fixes"
+report = "docs/acceptance/batch2.md"

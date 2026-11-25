@@ -1,0 +1,5 @@
+commit=4beebfd14650b1c6a687e7ab496d501423a0e50d
+url=https://wheels.vllm.ai/4beebfd14650b1c6a687e7ab496d501423a0e50d/vllm-0.16.1rc1.dev176%2Bg4beebfd14-cp38-abi3-manylinux_2_31_x86_64.whl
+sha256=727482c1c14f506a2c6b0a837b9453b069028b3facf3e60194bd2bc6b16d0d5f
+file=vllm-0.16.1rc1.dev176+g4beebfd14-cp38-abi3-manylinux_2_31_x86_64.whl
+cudart=[b'libcudart.so.12']
