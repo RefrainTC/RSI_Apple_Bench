@@ -124,8 +124,18 @@ The independent tester got the same verdicts and the same re-read numbers to the
 7. **The A/A noise depends on the host, and can exceed `aa_band`.** On the 2-GPU server the two calibrations had A/A
    max deviations of **9.45 % and 6.74 %**, against 0.7-3.6 % on our server and an `aa_band` of 5 %. Some scoring jobs
    there contained single slow pairs (1.46-1.58); the job's median pair absorbed them, and all 8 jobs stayed in the band.
-   Solo and both-GPU tests on that host were tight (1.675-1.725). The cause was not found. On such a host a single
-   pair says little, and a `no_gain` call near 1.05 is not reliable; compare candidates on several jobs.
+   Solo and both-GPU tests on that host were tight (1.675-1.725). A follow-up of 72 A/A pairs on that host (24 jobs,
+   both GPUs) found the likely cause:
+   - 6 pairs (8 %) were off by more than 3 %, none by more than 5 %. Median deviation was 0.4-0.7 %.
+   - All 6 fell while the *other* GPU on the same host was starting an engine or sitting between runs: 6 of 23 such
+     pairs, against 0 of 49 while the other engine was running.
+   - Host load, CPU use and CPU clock showed no difference.
+   - An outlier is a whole run about 3 % slower, not one slow rep.
+
+   Our guess is that another engine's start-up (weight loading, compilation, CUDA-graph capture) competes for host memory
+   or PCIe bandwidth. When two jobs share a host, stagger them so that timed runs don't overlap the other GPU's
+   start-up. On a host like that, a single pair says little, and a `no_gain` call near 1.05 is not reliable; compare
+   candidates on several jobs.
 4. **The re-read can only reject unlikely tokens.** Within 1 nat of the top choice, a candidate may write different,
    also plausible tokens. The 8-token timed outputs are generic openings ("The image shows ..."), so the image pass
    carries most of the checking of what the model sees.

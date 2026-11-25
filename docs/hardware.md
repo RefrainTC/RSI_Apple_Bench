@@ -105,6 +105,8 @@ The package setup scripts give uv a dependency cutoff date with `--exclude-newer
 
 ## Other practical notes
 
+- **Stagger jobs that share a host.** On a 2-GPU server, vLLM #27418's A/A outliers (over 3 %, about 8 % of pairs) all fell while the other GPU's engine was starting up. None fell while it was serving. Start the second job so its timed runs don't overlap the first job's start-up. See [findings.md](findings.md).
+
 - **Hugging Face rate limits.** Anonymous downloads from a shared IP got HTTP 429. The download scripts retry with back-off; setting `HF_TOKEN` avoids it.
 - **Long downloads stall** on some networks. Our scripts download each pinned wheel in its own short process and resume large files with a fresh connection; everything is checksum-verified before use.
 - **Deleted pins.** Some pinned packages were later removed from PyPI (xgrammar 0.1.15/0.1.16, an `apache-tvm-ffi` pre-release). The affected packages carry a documented override, applied to both arms.
